@@ -56,10 +56,27 @@ Movies, Series, TMDB/IMDb metadata, Multi-View and more.
 ## Install
 
 ### Option A — webOS Homebrew Channel (rooted TVs)
-1. Install the [Homebrew Channel](https://github.com/webosbrew/webos-homebrew-channel).
-2. Grab `dist/com.stewart.solstice_1.0.0_all.ipk` and sideload it through the
-   Homebrew Channel's device manager (`webosbrew dev-manager` → Device → Package install),
-   or host it in your own repo using `webosbrew/manifest.json` as a template.
+
+1. Install the [Homebrew Channel](https://github.com/webosbrew/webos-homebrew-channel) on the TV.
+2. Add this repository to it: open the Homebrew Channel → **Settings → Repositories → Add**
+   and paste:
+   ```
+   https://raw.githubusercontent.com/stxyzth/solstice-tv/main/webosbrew/repo.json
+   ```
+3. **Solstice TV** appears in the app list — install it. Updates are detected
+   automatically whenever the `version` in `app/appinfo.json` is bumped and a new
+   ipk is pushed.
+
+The feed lives in [`webosbrew/repo.json`](webosbrew/repo.json) (schema-compatible with
+the official `repo.webosbrew.org` API). After packaging a new version, regenerate the
+hashes with:
+
+```bash
+ares-package app -o dist && python3 scripts/update_repo.py
+```
+
+Direct sideload also works: grab `dist/com.stewart.solstice_1.0.0_all.ipk` and install
+via `webosbrew dev-manager` (Device → Package install).
 
 ### Option B — Developer Mode (no root)
 1. Install LG's **Developer Mode** app from the Content Store on the TV, enable it

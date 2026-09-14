@@ -1,0 +1,35 @@
+{
+  "paging": {
+    "page": 1,
+    "count": 1,
+    "maxPage": 1,
+    "itemsTotal": 1,
+    "prevUrl": null,
+    "nextUrl": null
+  },
+  "packages": [
+    {
+      "id": "com.stewart.solstice",
+      "title": "Solstice TV",
+      "iconUri": "https://raw.githubusercontent.com/stxyzth/solstice-tv/main/app/assets/icon.png",
+      "manifestUrl": "https://raw.githubusercontent.com/stxyzth/solstice-tv/main/webosbrew/solstice-tv.manifest.json",
+      "manifest": {
+        "id": "com.stewart.solstice",
+        "version": "1.0.0",
+        "type": "web",
+        "title": "Solstice TV",
+        "appDescription": "Apple TV-style IPTV player for LG webOS: Live TV with EPG guide and catch-up, VOD, series, Multi-View, mobile edit.",
+        "iconUri": "https://raw.githubusercontent.com/stxyzth/solstice-tv/main/app/assets/icon.png",
+        "sourceUrl": "https://github.com/stxyzth/solstice-tv",
+        "rootRequired": false,
+        "ipkUrl": "https://raw.githubusercontent.com/stxyzth/solstice-tv/main/dist/com.stewart.solstice_1.0.0_all.ipk",
+        "ipkHash": {
+          "sha256": "54f79c5e610442898aaa130a984676e27fae4ed961cbd61b07d5cd405a5fe664"
+        },
+        "ipkSize": 289582
+      },
+      "pool": "main",
+      "shortDescription": "Apple TV-style IPTV player for LG webOS: Live TV with EPG guide and catch-up, VOD, series, Multi-View, mobile edit."
+    }
+  ]
+}
