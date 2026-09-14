@@ -13,6 +13,7 @@
     var zapDigits = '', zapTimer = null;
     var retryExtDone = false, hlsFallbackDone = false;
     var lastInIntro = false;
+    var mpegtsP = null;
     var nextCountdown = null;
     var wasStopped = true;
     var startedOnce = false;
@@ -73,9 +74,17 @@
     }
 
     /* ---------------- source attach ---------------- */
-    function attach(url) {
+    function attach(rawUrl) {
+        var url = XTV.net.streamRelay ? XTV.net.streamRelay(rawUrl) : rawUrl;
         destroyHls();
         retryExtDone = false; hlsFallbackDone = false;
+        if (!isWebOS() && state && (state.kind === 'live' || state.kind === 'live-catchup') &&
+            window.mpegts && mpegts.getFeatureList().mseLivePlayback) {
+            attachMpegts(rawUrl);
+            var p0 = video.play();
+            if (p0 && p0.catch) p0.catch(function () {});
+            return;
+        }
         var isHls = /\.m3u8(\?|$)/i.test(url);
         var useNative = isHls ? (XTV.store.settings().preferNative && nativeHls() && isWebOS()) : true;
         if (!isHls && !isWebOS() && /\.ts(\?|$)/i.test(url)) {
@@ -108,11 +117,45 @@
     }
 
     function destroyHls() {
+        if (mpegtsP) {
+            try {
+                mpegtsP.pause();
+                mpegtsP.unload();
+                mpegtsP.detachMediaElement();
+                mpegtsP.destroy();
+            } catch (e) {}
+            mpegtsP = null;
+        }
         if (hls) { try { hls.destroy(); } catch (e) {} hls = null; }
+    }
+
+    /* Browser-mode live streams are usually raw MPEG-TS (panels 302 their
+       .m3u8 to .ts) which Chromium cannot demux — feed them through
+       mpegts.js over the LAN relay instead. True-HLS providers fall back
+       to hls.js through onVideoError. */
+    function attachMpegts(rawUrl) {
+        destroyHls();
+        var url = XTV.net.streamRelay ? XTV.net.streamRelay(rawUrl) : rawUrl;
+        mpegtsP = mpegts.createPlayer({
+            type: 'mpegts', isLive: true, url: url
+        }, { enableStashBuffer: false, liveBufferLatencyChasing: true });
+        mpegtsP.attachMediaElement(video);
+        mpegtsP.load();
+        mpegtsP.on(mpegts.Events.ERROR, function () { onVideoError(); });
+        try { video.play(); } catch (e) {}
     }
 
     function onVideoError() {
         if (!state) return;
+        // 0) live in browser: switch to mpegts.js (raw TS) before giving up on hls.js
+        if ((state.kind === 'live' || state.kind === 'live-catchup') && window.mpegts && !mpegtsP) {
+            showSpin(true, 'Switching to TS demuxer…');
+            var sM = state;
+            setTimeout(function () {
+                if (state === sM) attachMpegts(sM.url);
+            }, 60);
+            return;
+        }
         // 1) try alternate container extension (panels differ: .ts ↔ .m3u8)
         if (!retryExtDone && state.altUrl) {
             retryExtDone = true;

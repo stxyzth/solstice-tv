@@ -165,8 +165,11 @@
         if (autoFocus !== false) focusFirst(el);
     }
 
+    var prevFocusMap = typeof WeakMap === 'function' ? new WeakMap() : null;
+
     function pushRoot(el, opts) {
         opts = opts || {};
+        if (prevFocusMap) prevFocusMap.set(el, current);
         if (current) current.classList.remove('xf');
         stack.push(el);
         if (opts.focusEl) setFocused(opts.focusEl);
@@ -177,8 +180,10 @@
         var top = stack.pop();
         if (top && top._onpop) top._onpop();
         current = null;
-        // return focus into screen content — never onto the tab bar,
-        // which would schedule a tab switch back to Home
+        // put focus back where the user was before the modal opened (skipping
+        // the tab bar, which would schedule a switch back to Home)
+        var prev = (top && prevFocusMap) ? prevFocusMap.get(top) : null;
+        if (prev && visible(prev)) { setFocused(prev); return; }
         focusFirst(topRoot(), true);
     }
 

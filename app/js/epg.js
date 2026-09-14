@@ -104,14 +104,14 @@
             var now = new Date();
             for (var i = 0; i < list.length; i++) {
                 if (list[i].start <= now && now < list[i].stop) {
-                    return { now: list[i], next: list[i + 1] || null };
+                    return Promise.resolve({ now: list[i], next: list[i + 1] || null });
                 }
             }
             // not loaded around now — nearest upcoming
             for (var j = 0; j < list.length; j++) {
-                if (list[j].start > now) return { now: null, next: list[j] };
+                if (list[j].start > now) return Promise.resolve({ now: null, next: list[j] });
             }
-            return { now: null, next: null };
+            return Promise.resolve({ now: null, next: null });
         }
         // fall back to short EPG (cached, single-flight)
         if (nowNext._pending && nowNext._pending[channel.id]) return nowNext._pending[channel.id];

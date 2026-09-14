@@ -33,6 +33,7 @@
             input.value = vals[f.key] || '';
             input.setAttribute('autocomplete', 'off');
             input.addEventListener('input', function () { vals[f.key] = input.value; });
+            input.addEventListener('focus', function () { var L = this.value.length; try { this.setSelectionRange(L, L); } catch (e) {} });
             input.addEventListener('keydown', function (e) {
                 if (e.keyCode === 13) { e.preventDefault(); try { input.blur(); } catch (er) {} }
             });

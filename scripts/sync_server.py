@@ -12,6 +12,7 @@ import os
 import socket
 import threading
 import time
+import http.client
 import urllib.parse
 import urllib.request
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
@@ -81,11 +82,12 @@ class Handler(SimpleHTTPRequestHandler):
         elif path.startswith('/api/wait/'):
             token = self._token()
             since = 0
-            if '?v=' in self.path:
+            qv = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query).get('v')
+            if qv:
                 try:
-                    since = int(self.path.split('?v=')[1])
-                except Exception:
-                    pass
+                    since = int(qv[0])
+                except (TypeError, ValueError):
+                    since = 0
             deadline = time.time() + 25
             while time.time() < deadline:
                 with _lock:
@@ -98,24 +100,102 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_response(204)
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
+        elif path.startswith('/webosbrew/'):
+            root = os.path.abspath(os.path.join(APP_DIR, '..'))
+            fp = os.path.abspath(os.path.join(root, path.lstrip('/')))
+            if not fp.startswith(root) or not os.path.isfile(fp):
+                return self._json({'error': 'not found'}, 404)
+            body = open(fp, 'rb').read()
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Content-Length', str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
         else:
             super().do_GET()
 
     def relay(self):
         """LAN relay for browser mode: desktop pages can't call providers
         cross-origin (no CORS headers on panels), so the sync server fetches
-        on their behalf. Trusted-home-network convenience only."""
+        on their behalf. HLS playlists are rewritten so every nested URI is
+        fetched through the relay too; live TS streams are passed through in
+        chunks (they never end). Trusted-home-network convenience only."""
         qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         target = (qs.get('url') or [''])[0]
         if not target.startswith('http'):
             return self._json({'error': 'bad url'}, 400)
+        conn, resp, final_url = self._fetch_follow(target)
+        if resp is None or final_url is None:
+            return self._json({'error': 'unreachable'}, 502)
+        low_t = final_url.split('?')[0].lower()
+        ctype = (resp.getheader('Content-Type') or 'application/octet-stream').lower()
+        low_final = final_url.split('?')[0].lower()
+
+        playlist = low_final.endswith('.m3u8') or 'mpegurl' in ctype
+        ts_like = low_final.endswith('.ts') or low_t.endswith('.mpegts') or 'mp2t' in ctype or ctype.startswith('video/')
+        head = b''
+
+        if not playlist and not ts_like:
+            # sniff: MPEG-TS sync byte 0x47 every 188 bytes
+            head = resp.read(564)
+            if len(head) >= 189 and head[0] == 0x47 and head[188] == 0x47:
+                ts_like = True
+            else:
+                rest = resp.read()
+                resp.close(); conn.close()
+                return self._serve_buffered(head + rest, ctype)
+
+        if playlist:
+            body = resp.read(64 * 1024 * 1024)
+            resp.close(); conn.close()
+            text = body.decode('utf-8', 'replace')
+            out = []
+            for line in text.splitlines():
+                ls = line.strip()
+                if ls and not ls.startswith('#'):
+                    absu = urllib.parse.urljoin(final_url, ls)
+                    out.append('/api/proxy?url=' + urllib.parse.quote(absu, safe=''))
+                else:
+                    out.append(line)
+            body = ('\n'.join(out) + '\n').encode('utf-8')
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/vnd.apple.mpegurl')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Cache-Control', 'no-store')
+            self.send_header('Content-Length', str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            conn.close()
+            return
+
+        # live TS: stream pass-through (never ends)
+        self.send_response(200)
+        self.send_header('Content-Type', ctype if 'video' in ctype or 'mp2t' in ctype else 'video/mp2t')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Cache-Control', 'no-store')
+        self.send_header('Connection', 'close')
+        self.end_headers()
+        self.close_connection = True
         try:
-            req = urllib.request.Request(target, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req, timeout=60) as r:
-                body = r.read()
-                ctype = r.headers.get('Content-Type', 'application/octet-stream')
-        except Exception as e:
-            return self._json({'error': str(e)}, 502)
+            if head:
+                self.wfile.write(head)
+                self.wfile.flush()
+            while True:
+                chunk = resp.read(32768)
+                if not chunk:
+                    break
+                self.wfile.write(chunk)
+                self.wfile.flush()
+        except (BrokenPipeError, ConnectionResetError, OSError):
+            pass
+        finally:
+            try: resp.close()
+            except Exception: pass
+            try: conn.close()
+            except Exception: pass
+
+    def _serve_buffered(self, body, ctype):
         self.send_response(200)
         self.send_header('Content-Type', ctype)
         self.send_header('Access-Control-Allow-Origin', '*')
@@ -123,6 +203,50 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    def _fetch_follow(self, target, max_hops=4):
+        url = target
+        resp = None
+        for _ in range(max_hops):
+            p = urllib.parse.urlparse(url)
+            port = p.port or (443 if p.scheme == 'https' else 80)
+            if p.scheme == 'https':
+                conn = http.client.HTTPSConnection(p.hostname, port, timeout=30)
+            else:
+                conn = http.client.HTTPConnection(p.hostname, port, timeout=30)
+            conn.request('GET', p.path + (('?' + p.query) if p.query else ''),
+                         headers={'User-Agent': 'Mozilla/5.0'})
+            resp = conn.getresponse()
+            if resp.status in (301, 302, 303, 307, 308):
+                loc = resp.getheader('Location')
+                resp.read()
+                conn.close()
+                if not loc:
+                    break
+                url = urllib.parse.urljoin(url, loc)
+                continue
+            return conn, resp, url
+        return conn, resp, url
+
+    def stream_passthrough(self, target):
+        conn, resp, url = self._fetch_follow(target)
+        self.send_response(200)
+        self.send_header('Content-Type', resp.getheader('Content-Type', 'video/mp2t'))
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Cache-Control', 'no-store')
+        self.send_header('Connection', 'close')
+        self.end_headers()
+        self.close_connection = True
+        try:
+            while True:
+                chunk = resp.read(32768)
+                if not chunk:
+                    break
+                self.wfile.write(chunk)
+                self.wfile.flush()
+        finally:
+            try: conn.close()
+            except Exception: pass
 
     def do_POST(self):
         if self.path.startswith('/api/state/'):
@@ -133,9 +257,13 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._json({'error': 'bad json'}, 400)
             with _lock:
                 prev = _state.get(self._token(), {'v': 0})
+                try:
+                    given_v = int(data.get('v') or 0)
+                except (TypeError, ValueError):
+                    given_v = 0
                 st = {
-                    'v': max(int(data.get('v') or 0), prev.get('v', 0) + 1),
-                    'settings': data.get('settings') or {},
+                    'v': max(given_v, prev.get('v', 0) + 1),
+                    'settings': data.get('settings') if isinstance(data.get('settings'), dict) else {},
                 }
                 _state[self._token()] = st
             self._json(st)

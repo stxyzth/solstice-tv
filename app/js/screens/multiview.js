@@ -99,7 +99,7 @@
                 '<div class="mv-audio">♪</div>';
             gridEl.appendChild(tile);
             var v = tile.querySelector('video');
-            var url = XTV.xtream.liveUrl(ch.id, 'm3u8');
+            var url = XTV.net.streamRelay ? XTV.net.streamRelay(XTV.xtream.liveUrl(ch.id, 'm3u8')) : XTV.xtream.liveUrl(ch.id, 'm3u8');
             if (window.Hls && Hls.isSupported() && !/(PalmSystem|webOS)/.test(navigator.userAgent)) {
                 var h = new Hls(); h.loadSource(url); h.attachMedia(v);
                 tile._hls = h;

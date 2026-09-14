@@ -114,14 +114,18 @@
         // transparently relayed through the bundled sync server (/api/proxy).
         _relay: (location.protocol === 'http:' || location.protocol === 'https:') &&
                 !(window.PalmSystem || window.webOS),
-        request: function (opts, cb) {
-            var url = opts.url;
+        streamRelay: function (url) {
+            // browser mode: route cross-origin streams through the sync server
             if (this._relay && /^https?:\/\//i.test(url)) {
                 var tgtHost = url.replace(/^https?:\/\//i, '').split('/')[0].toLowerCase();
                 if (tgtHost !== location.host.toLowerCase()) {
-                    url = '/api/proxy?url=' + encodeURIComponent(url);
+                    return '/api/proxy?url=' + encodeURIComponent(url);
                 }
             }
+            return url;
+        },
+        request: function (opts, cb) {
+            var url = this.streamRelay(opts.url);
             var xhr = new XMLHttpRequest();
             xhr.open(opts.method || 'GET', url, true);
             xhr.responseType = opts.responseType === 'json' ? 'text' : (opts.responseType || 'text');

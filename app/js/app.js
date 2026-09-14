@@ -37,7 +37,7 @@
     /* ---------------- DOM shell ---------------- */
     function buildShell() {
         document.body.innerHTML =
-            '<div id="ambient"><img id="ambient-img" alt=""></div>' +
+            '<div id="ambient"><img id="ambient-img" alt="" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></div>' +
             '<div id="app">' +
             '  <header id="tabbar">' +
             '    <nav id="tabs"></nav>' +
@@ -418,7 +418,7 @@
         var handled = true;
         var modal = topModal();
         if (modal) {
-            if (key === 'back') { modal.close(); }
+            if (key === 'back') { modal.close(); }   // topModal() exposes close()
             else if (key === 'ok') { XTV.focus.select(); }
             else if (key === 'left' || key === 'right' || key === 'up' || key === 'down') { XTV.focus.move(key); }
             else handled = false;

@@ -106,8 +106,8 @@
         });
         this.root.addEventListener('xfedge', function (e) {
             if (e.detail.dir === 'down') {
-                var below = self._lastRow + 1;
-                if (below < self.rows) { self.renderWindow(below); self._focusRowCol(below, self._lastCol); }
+                var below = self._last + 1;
+                if (below < self.rows) { self.renderWindow(below); self._focusRowCol(below, 0); }
             }
         });
         this.renderWindow();
@@ -132,6 +132,10 @@
         if (firstRow === this._first && lastRow === this._last && !forceRow) return;
         this._first = firstRow; this._last = lastRow;
         var self = this;
+        // preserve focus across window rebuilds (scroll/edge) so focus never
+        // lands on a detached node or escapes to the tab bar
+        var prev = XTV.focus.current();
+        var prevIdx = (prev && this.root.contains(prev) && prev._idx !== undefined) ? prev._idx : null;
         this.win.innerHTML = '';
         this._map = {};
         this.win.style.transform = 'translateY(' + (firstRow * this.rowH + 10) + 'px)';
@@ -152,6 +156,10 @@
         }
         this.win.appendChild(frag);
         this._lastCol = 0;
+        if (prevIdx !== null) {
+            var pe = this._map[Math.min(prevIdx, this.items.length - 1)];
+            if (pe) { XTV.focus.setFocused(pe); return; }
+        }
     };
 
     Grid.prototype.focusIndex = function (i) {
@@ -173,7 +181,11 @@
     /* ================= MODAL ================= */
 
     var modalStack = [];
-    function topModal() { return modalStack.length ? modalStack[modalStack.length - 1] : null; }
+    function topModal() {
+        if (!modalStack.length) return null;
+        var backdrop = modalStack[modalStack.length - 1];
+        return { close: function () { backdrop._close(); } };
+    }
 
     function modal(opts) {
         // opts: {title, cls, body(el)->void | html, buttons:[{label, primary, onSelect(close)}],
