@@ -794,6 +794,16 @@ body.player-active #app { visibility: hidden; }
 }
 .pbtn-icon { font-size: 24px; color: #6db8ff; }
 .pbtn.xf { background: #fff; color: #000; -webkit-transform: scale(1.07); transform: scale(1.07); box-shadow: 0 10px 34px rgba(0,0,0,0.5); }
+.pbtn-skip { background: rgba(48, 209, 88, 0.95); border-color: rgba(48, 209, 88, 0.6); }
+.pbtn-skip .pbtn-icon { color: #06280f; }
+.pbtn-skip.xf { background: #30d158; }
+
+.hist-item { display: -webkit-flex; display: flex; gap: 16px; -webkit-align-items: center; align-items: center; padding: 10px 14px; }
+.hist-icon { width: 96px; height: 54px; object-fit: cover; border-radius: 8px; background: #e6e9ef; -webkit-flex: none; flex: none; }
+.hist-txt { min-width: 0; }
+.hist-title { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hist-sub { font-size: 17px; color: var(--text-dim); margin-top: 3px; }
+.menu-item.xf .hist-sub { color: rgba(255,255,255,0.75); }
 .pbtn.xf .pbtn-icon { color: #000; }
 
 .player-spinner {

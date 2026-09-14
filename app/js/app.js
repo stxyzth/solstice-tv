@@ -365,7 +365,7 @@
 
     /* ---------------- external settings (mobile companion) ---------------- */
     var REMOTE_KEYS = ['accent', 'ambient', 'preferNative', 'bufferSec', 'autoplayNext', 'markWatchedPct',
-        'epgOffsetHours', 'fullEpg', 'hideAdult', 'subtitleLang', 'tmdbKey', 'omdbKey', 'osKey', 'displayClock'];
+        'epgOffsetHours', 'fullEpg', 'hideAdult', 'subtitleLang', 'tmdbKey', 'omdbKey', 'osKey', 'displayClock', 'skipIntroSec'];
 
     app.applyExternalSettings = function (obj) {
         if (!obj) return 0;

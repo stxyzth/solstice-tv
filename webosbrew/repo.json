@@ -24,9 +24,9 @@
         "rootRequired": false,
         "ipkUrl": "https://raw.githubusercontent.com/stxyzth/solstice-tv/main/dist/com.stewart.solstice_1.0.0_all.ipk",
         "ipkHash": {
-          "sha256": "2b82ae290dd95fdc2f90bff1c026d7e5117fb06ffdc347e539ce416094cc8421"
+          "sha256": "4aba52877e49568505c3b648d347c208b365ca5807f0e5fb8c51ba4d82bacb45"
         },
-        "ipkSize": 289714
+        "ipkSize": 290670
       },
       "pool": "main",
       "shortDescription": "Apple TV-style IPTV player for LG webOS: Live TV with EPG guide and catch-up, VOD, series, Multi-View, mobile edit."

@@ -12,6 +12,7 @@
     var hideTimer = null, saveTimer = null, watchdog = null, infoTimer = null;
     var zapDigits = '', zapTimer = null;
     var retryExtDone = false, hlsFallbackDone = false;
+    var lastInIntro = false;
     var nextCountdown = null;
     var wasStopped = true;
     var startedOnce = false;
@@ -150,6 +151,7 @@
         state = opts;
         wasStopped = false;
         startedOnce = false;
+        lastInIntro = false;
         controlsOn = false; zone = 'scrub'; btnIdx = 0;
         zapDigits = '';
         overlay.classList.add('on');
@@ -224,10 +226,24 @@
         }
     }
 
+    function inIntro() {
+        return !!(state && state.kind === 'ep' && video.currentTime >= 6 &&
+                  video.currentTime <= (XTV.store.settings().skipIntroSec || 120));
+    }
+
     function onTimeUpdate() {
         updSeek();
         showSpin(false);
         if (state && state.kind !== 'live') saveProgress(false);
+        if (state && state.kind === 'ep' && controlsOn) {
+            var intro = inIntro();
+            if (intro !== lastInIntro) {
+                lastInIntro = intro;
+                buildButtons();
+                if (btnIdx >= BUTTONS.length) btnIdx = BUTTONS.length - 1;
+                renderControlsFocus();
+            }
+        }
     }
 
     function onPlaying() {
@@ -328,14 +344,115 @@
                 } else XTV.ui.toast('Catch-up not available for this channel');
             } });
         } else {
-            BUTTONS.push({ icon: state.sub ? 'CC' : 'CC', label: 'Subtitles', cb: subtitleMenu });
+            if (inIntro()) {
+                BUTTONS.push({ icon: '⏭', label: 'Skip intro', cls: ' pbtn-skip', cb: function () {
+                    try { video.currentTime = (XTV.store.settings().skipIntroSec || 120) + 0.5; } catch (e) {}
+                    XTV.ui.toast('Intro skipped');
+                    lastInIntro = false;
+                    buildButtons();
+                    renderControlsFocus();
+                } });
+            }
+            BUTTONS.push({ icon: 'CC', label: 'Subtitles', cb: subtitleMenu });
             if (state.onNext) BUTTONS.push({ icon: '⏭', label: 'Next episode', cb: function () { var n = state.onNext(); if (n) play(n); else XTV.ui.toast('No next episode'); } });
         }
+        BUTTONS.push({ icon: '🕘', label: 'History', cb: historyMenu });
         BUTTONS.push({ icon: '⚙', label: 'Quality / Audio', cb: trackMenu });
         var html = '';
         for (var i = 0; i < BUTTONS.length; i++)
-            html += '<div class="pbtn" data-bi="' + i + '"><span class="pbtn-icon">' + BUTTONS[i].icon + '</span><span class="pbtn-label">' + BUTTONS[i].label + '</span></div>';
+            html += '<div class="pbtn' + (BUTTONS[i].cls || '') + '" data-bi="' + i + '"><span class="pbtn-icon">' + BUTTONS[i].icon + '</span><span class="pbtn-label">' + BUTTONS[i].label + '</span></div>';
         row.innerHTML = html;
+    }
+
+    /* history & recents: continue watching, recent movies/series, live channels */
+    function historyMenu() {
+        clearTimeout(hideTimer);
+        var cat = (XTV.app && XTV.app.catalog) || {};
+        var entries = [];
+        var seen = {};
+
+        function push(key, icon, title, sub, act) {
+            if (seen[key]) return;
+            seen[key] = 1;
+            entries.push({ key: key, icon: icon, title: title, sub: sub || '', act: act, ts: entries.length });
+        }
+
+        // live channels (recents)
+        var liveById = {};
+        (cat.live || []).forEach(function (c) { liveById[c.id] = c; });
+        XTV.store.history().forEach(function (h) {
+            if (h.kind === 'live' && liveById[h.id]) {
+                var ch = liveById[h.id];
+                push('live:' + h.id, ch.icon, ch.name, 'Channel ' + (ch.num != null ? ch.num : ''), function () {
+                    m.close();
+                    XTV.app.playLive(ch, cat.live, (cat.live || []).indexOf(ch));
+                });
+            }
+        });
+
+        // continue watching (exact resume points)
+        var seriesInList = {}, movieInList = {};
+        XTV.store.continueWatching().forEach(function (p) {
+            if (p.kind === 'movie') {
+                var mv = (cat.vod || []).find(function (x) { return String(x.id) === String(p.id); });
+                if (mv) {
+                    movieInList[String(p.id)] = 1;
+                    push('movie:' + p.id, p.meta.icon || mv.icon, mv.name, U.fmtTime(Math.max(0, p.dur - p.pos)) + ' left', function () {
+                        m.close(); XTV.app.playMovie(mv, p.pos);
+                    });
+                }
+            } else if (p.kind === 'ep' && p.meta.seriesId != null) {
+                var se = (cat.series || []).find(function (x) { return String(x.id) === String(p.meta.seriesId); });
+                if (se) {
+                    seriesInList[String(p.meta.seriesId)] = 1;
+                    push('ep:' + p.meta.seriesId + ':' + p.season + ':' + p.ep, p.meta.icon || se.icon,
+                        se.name, 'S' + p.season + ' E' + p.ep + ' · ' + U.fmtTime(Math.max(0, p.dur - p.pos)) + ' left', function () {
+                        m.close(); XTV.app.playEpisodeAt(se, p.season, p.ep, p.pos);
+                    });
+                }
+            }
+        });
+
+        // recently watched series / movies (incl. finished; skip dupes of the above)
+        XTV.store.recentlyWatchedSeries().forEach(function (r) {
+            if (seriesInList[String(r.seriesId)]) return;
+            var se = (cat.series || []).find(function (x) { return String(x.id) === String(r.seriesId); });
+            if (!se) return;
+            push('rseries:' + r.seriesId + ':' + r.ts, r.icon || se.icon, se.name,
+                r.season != null ? 'S' + r.season + ' E' + r.ep : '', function () {
+                    m.close(); XTV.app.playEpisodeAt(se, r.season, r.ep, 0);
+                });
+        });
+        XTV.store.recentlyWatchedMovies().forEach(function (r) {
+            if (movieInList[String(r.id)]) return;
+            var mv = (cat.vod || []).find(function (x) { return String(x.id) === String(r.id); });
+            if (!mv) return;
+            push('rmovie:' + r.id + ':' + r.ts, r.icon || mv.icon, mv.name,
+                r.frac >= 0.98 ? 'Watched' : (r.pos > 30 && r.dur ? U.fmtTime(r.dur - r.pos) + ' left' : ''), function () {
+                    m.close(); XTV.app.playMovie(mv, r.frac >= 0.98 ? 0 : r.pos);
+                });
+        });
+
+        if (!entries.length) {
+            XTV.ui.toast('No history yet');
+            return;
+        }
+        var html = entries.map(function (en, i) {
+            return '<div class="menu-item hist-item" data-x data-hi="' + i + '">' +
+                '<img class="hist-icon" src="' + U.esc(en.icon || U.placeholder(en.title, 'wide')) + '" onerror="this.style.visibility=\'hidden\'">' +
+                '<div class="hist-txt"><div class="hist-title">' + U.esc(en.title) + '</div>' +
+                '<div class="hist-sub">' + U.esc(en.sub) + '</div></div></div>';
+        }).join('');
+        var hm = XTV.ui.modal({
+            title: 'History & Recents',
+            cls: 'modal-menu',
+            body: html,
+            buttons: [{ label: 'Close', primary: true, onSelect: function (close) { close(); } }]
+        });
+        hm.box.querySelector('.modal-body').addEventListener('xfselect', function (e) {
+            var i = parseInt(e.detail.el.getAttribute('data-hi'), 10);
+            if (entries[i]) entries[i].act();
+        });
     }
 
     function updButtons() {
@@ -744,27 +861,31 @@
                 return true;
             case 'left':
             case 'right':
-                if (state.kind === 'live') { zap(key === 'left' ? -1 : 1); return true; }
-                if (zone === 'buttons') {
-                    btnIdx = U.clamp(btnIdx + (key === 'left' ? -1 : 1), 0, BUTTONS.length - 1);
+                if (state.kind === 'live' || zone === 'buttons') {
+                    // walk the transport row (wraps around)
+                    var delta = key === 'left' ? -1 : 1;
+                    btnIdx = (btnIdx + delta + BUTTONS.length) % BUTTONS.length;
                     renderControlsFocus();
-                } else {
-                    var now = Date.now();
-                    var step = 10;
-                    if (now - repeatT0 > 1600) step = 60;
-                    if (now - repeatT0 > 4000) step = 300;
-                    seekBy(key === 'left' ? -step : step);
+                    scheduleHide(8000);
+                    return true;
                 }
+                var now = Date.now();
+                var step = 10;
+                if (now - repeatT0 > 1600) step = 60;
+                if (now - repeatT0 > 4000) step = 300;
+                seekBy(key === 'left' ? -step : step);
                 repeatT0 = Date.now();
                 scheduleHide(8000);
                 return true;
             case 'up':
-                if (state.kind !== 'live' && zone === 'scrub' && BUTTONS.length) {
+                if (state.kind === 'live' && controlsOn) { zap(-1); return true; }
+                if (zone === 'scrub' && BUTTONS.length) {
                     zone = 'buttons'; btnIdx = 0; renderControlsFocus();
                 }
                 scheduleHide(8000);
                 return true;
             case 'down':
+                if (state.kind === 'live' && controlsOn) { zap(1); return true; }
                 if (zone === 'buttons') { zone = 'scrub'; renderControlsFocus(); }
                 else showControls(false);
                 return true;

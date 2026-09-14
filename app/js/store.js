@@ -15,6 +15,7 @@
         bufferSec: 30,            // target buffer for hls.js
         autoplayNext: true,
         markWatchedPct: 90,
+        skipIntroSec: 120,
         epgOffsetHours: 0,        // server timezone correction
         fullEpg: true,            // load full xmltv guide when available
         hideAdult: true,

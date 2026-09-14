@@ -117,6 +117,12 @@
                 w.appendChild(rowToggle('Autoplay next episode',
                     function () { return s.autoplayNext; },
                     function (v) { XTV.store.setSetting('autoplayNext', v); }));
+                w.appendChild(rowValue('Skip intro target', function () { return s.skipIntroSec + ' s'; }, function (set) {
+                    var opts = [90, 120, 150];
+                    var i = Math.max(0, opts.indexOf(s.skipIntroSec || 120));
+                    var v = opts[(i + 1) % opts.length];
+                    XTV.store.setSetting('skipIntroSec', v); set(v + ' s');
+                }, 'Episode intro window shown in the player (6s to this point)'));
                 w.appendChild(rowValue('Mark watched at', function () { return s.markWatchedPct + '%'; }, function (set) {
                     var opts = [80, 90, 95, 100];
                     var i = Math.max(0, opts.indexOf(s.markWatchedPct));
