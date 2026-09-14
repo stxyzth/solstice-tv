@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Solstice TV — Remote Settings</title>
+<style>
+    :root { --accent: #0a84ff; }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+        background: #f2f4f8; color: #10131a;
+        font-family: -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif;
+        min-height: 100vh;
+        padding: max(14px, env(safe-area-inset-top)) 16px calc(96px + env(safe-area-inset-bottom));
+    }
+    header { display: flex; align-items: center; gap: 12px; padding: 10px 4px 18px; }
+    .logo { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #0a84ff, #0055cc);
+            display: flex; align-items: center; justify-content: center; font-size: 22px; color: #fff;
+            box-shadow: 0 8px 20px rgba(10,132,255,.35); }
+    h1 { font-size: 22px; font-weight: 800; }
+    .sub { font-size: 13px; color: #67707f; }
+    .card { background: #ffffff; border: 1px solid rgba(17,24,39,.08); border-radius: 16px; padding: 16px; margin-bottom: 14px;
+            box-shadow: 0 4px 16px rgba(16,24,40,.06); }
+    .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .12em; color: #67707f; margin-bottom: 14px; }
+    .row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(17,24,39,.06); gap: 12px; }
+    .row:last-child { border-bottom: none; }
+    .label { font-size: 16px; font-weight: 600; }
+    .hint { font-size: 12px; color: #67707f; margin-top: 3px; max-width: 230px; }
+    input[type=text] { background: #f0f2f6; border: 1px solid rgba(17,24,39,.1); color: #10131a; border-radius: 10px;
+                       padding: 11px 12px; font-size: 15px; width: 100%; }
+    input[type=range] { width: 150px; accent-color: var(--accent); }
+    select { background: #f0f2f6; color: #10131a; border: 1px solid rgba(17,24,39,.1); border-radius: 10px; padding: 9px 10px; font-size: 15px; }
+    .swatches { display: flex; gap: 10px; }
+    .sw { width: 34px; height: 34px; border-radius: 50%; border: 3px solid transparent; box-shadow: inset 0 0 0 1px rgba(17,24,39,.08); }
+    .sw.on { border-color: #10131a; }
+    .switch { width: 52px; height: 30px; border-radius: 100px; background: rgba(17,24,39,.16); position: relative; transition: background .2s; flex: none; }
+    .switch i { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; background: #fff; border-radius: 100px;
+                box-shadow: 0 2px 6px rgba(16,24,40,.3); transition: left .2s; }
+    .switch.on { background: #30d158; }
+    .switch.on i { left: 25px; }
+    .val { font-size: 15px; color: #67707f; min-width: 44px; text-align: right; }
+    .save {
+        position: fixed; left: 16px; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom));
+        background: var(--accent); color: #fff; border: none; border-radius: 16px;
+        font-size: 17px; font-weight: 700; padding: 16px; width: calc(100% - 32px);
+        box-shadow: 0 10px 30px rgba(10,132,255,.35);
+    }
+    .save:disabled { opacity: .5; }
+    .status { font-size: 13px; color: #67707f; text-align: center; padding: 10px; }
+    .pair { background: linear-gradient(135deg, rgba(10,132,255,.14), rgba(10,132,255,.04)); border: 1px solid rgba(10,132,255,.4); }
+    .pair .code { font-size: 34px; font-weight: 800; letter-spacing: .18em; text-align: center; margin: 6px 0 2px; }
+    .center { text-align: center; }
+    .err { color: #d70015; }
+</style>
+</head>
+<body>
+    <header>
+        <div class="logo">▶</div>
+        <div>
+            <h1>Solstice Remote</h1>
+            <div class="sub" id="conn">Connecting to TV…</div>
+        </div>
+    </header>
+
+    <div class="card pair" id="paircard" style="display:none">
+        <div class="sub center" style="margin-bottom:6px">Pair code</div>
+        <div class="code" id="paircode">······</div>
+    </div>
+
+    <div id="form" style="display:none">
+        <div class="card">
+            <h2>Appearance</h2>
+            <div class="row"><div><div class="label">Accent</div></div><div class="swatches" id="swatches"></div></div>
+            <div class="row"><div><div class="label">Ambient light</div><div class="hint">Blurred artwork behind browsing</div></div><div class="switch" data-k="ambient"><i></i></div></div>
+            <div class="row"><div><div class="label">Clock in player</div></div><div class="switch" data-k="displayClock"><i></i></div></div>
+        </div>
+
+        <div class="card">
+            <h2>Playback</h2>
+            <div class="row"><div><div class="label">Hardware decoder</div><div class="hint">Native webOS pipeline for HLS/TS</div></div><div class="switch" data-k="preferNative"><i></i></div></div>
+            <div class="row"><div><div class="label">Autoplay next episode</div></div><div class="switch" data-k="autoplayNext"><i></i></div></div>
+            <div class="row"><div><div class="label">Buffer target</div></div><div style="display:flex;align-items:center;gap:10px"><input type="range" min="10" max="60" step="5" id="buffer"><span class="val" id="bufferv">30s</span></div></div>
+            <div class="row"><div><div class="label">Mark watched at</div></div>
+                <select id="markw"><option>80</option><option>90</option><option>95</option><option>100</option></select></div>
+        </div>
+
+        <div class="card">
+            <h2>Guide & EPG</h2>
+            <div class="row"><div><div class="label">Timezone offset</div><div class="hint">Fix guide times if wrong</div></div>
+                <select id="tz"></select></div>
+            <div class="row"><div><div class="label">Full XMLTV guide</div></div><div class="switch" data-k="fullEpg"><i></i></div></div>
+            <div class="row"><div><div class="label">Hide adult categories</div></div><div class="switch" data-k="hideAdult"><i></i></div></div>
+        </div>
+
+        <div class="card">
+            <h2>Integrations</h2>
+            <div class="row" style="display:block">
+                <div class="label">TMDB API key</div><div class="hint">themoviedb.org — artwork, cast, ratings</div>
+                <input type="text" id="tmdbKey" placeholder="TMDB v3 key" style="margin-top:8px">
+            </div>
+            <div class="row" style="display:block">
+                <div class="label">OMDb API key</div><div class="hint">omdbapi.com — IMDb / RT scores</div>
+                <input type="text" id="omdbKey" placeholder="OMDb key" style="margin-top:8px">
+            </div>
+            <div class="row" style="display:block">
+                <div class="label">OpenSubtitles key</div><div class="hint">opensubtitles.com — player subtitles</div>
+                <input type="text" id="osKey" placeholder="OS API key" style="margin-top:8px">
+            </div>
+            <div class="row"><div><div class="label">Subtitle language</div></div><input type="text" id="sublang" value="en" style="width:90px"></div>
+        </div>
+
+        <button class="save" id="save">Apply to TV</button>
+        <div class="status" id="status"></div>
+    </div>
+
+    <div class="card err" id="nopair" style="display:none">
+        <div class="center" style="padding:8px">
+            <b>No pair code.</b><br>
+            <span class="sub">On the TV: Settings → Edit on Mobile → Start pairing, then scan the QR shown there.</span>
+        </div>
+    </div>
+
+<script>
+(function () {
+    'use strict';
+    var pair = (location.hash || '').replace('#', '');
+    var settings = {};
+    var ACCENTS = ['#0a84ff', '#ff375f', '#248a3d', '#bf5af2', '#c93400', '#5e5ce6'];
+
+    if (!pair) { document.getElementById('nopair').style.display = ''; return; }
+    document.getElementById('paircard').style.display = '';
+    document.getElementById('paircode').textContent = pair;
+
+    var tz = document.getElementById('tz');
+    for (var h = -12; h <= 12; h++) {
+        var o = document.createElement('option');
+        o.value = String(h); o.textContent = (h > 0 ? '+' : '') + h + ' h';
+        tz.appendChild(o);
+    }
+
+    function api(path, opts, cb) {
+        fetch(path, opts).then(function (r) {
+            if (r.status === 204) return {};
+            return r.json();
+        }).then(function (j) { cb(null, j); }).catch(function (e) { cb(e); });
+    }
+    function postSettings(cb) {
+        api('/api/state/' + pair, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ settings: settings })
+        }, cb);
+    }
+
+    /* load current from TV */
+    api('/api/state/' + pair, {}, function (err, st) {
+        var conn = document.getElementById('conn');
+        if (err || !st || !st.settings || !Object.keys(st.settings).length) {
+            conn.textContent = 'Waiting for TV… open Settings → Edit on Mobile on the TV';
+            setTimeout(function () { location.reload(); }, 4000);
+            return;
+        }
+        settings = st.settings;
+        conn.textContent = 'Connected — pair ' + pair;
+        document.getElementById('form').style.display = '';
+        render();
+    });
+
+    function render() {
+        document.documentElement.style.setProperty('--accent', settings.accent || '#0a84ff');
+        var sw = document.getElementById('swatches');
+        sw.innerHTML = '';
+        ACCENTS.forEach(function (c) {
+            var d = document.createElement('div');
+            d.className = 'sw' + (settings.accent === c ? ' on' : '');
+            d.style.background = c;
+            d.onclick = function () { settings.accent = c; render(); };
+            sw.appendChild(d);
+        });
+        Array.prototype.forEach.call(document.querySelectorAll('.switch'), function (el) {
+            var k = el.getAttribute('data-k');
+            el.classList.toggle('on', !!settings[k]);
+            el.onclick = function () { settings[k] = !settings[k]; el.classList.toggle('on', settings[k]); };
+        });
+        document.getElementById('buffer').value = settings.bufferSec || 30;
+        document.getElementById('bufferv').textContent = (settings.bufferSec || 30) + 's';
+        document.getElementById('markw').value = String(settings.markWatchedPct || 90);
+        document.getElementById('tz').value = String(settings.epgOffsetHours || 0);
+        document.getElementById('tmdbKey').value = settings.tmdbKey || '';
+        document.getElementById('omdbKey').value = settings.omdbKey || '';
+        document.getElementById('osKey').value = settings.osKey || '';
+        document.getElementById('sublang').value = settings.subtitleLang || 'en';
+    }
+
+    document.getElementById('buffer').oninput = function () {
+        settings.bufferSec = parseInt(this.value, 10);
+        document.getElementById('bufferv').textContent = settings.bufferSec + 's';
+    };
+    document.getElementById('markw').onchange = function () { settings.markWatchedPct = parseInt(this.value, 10); };
+    document.getElementById('tz').onchange = function () { settings.epgOffsetHours = parseInt(this.value, 10); };
+    ['tmdbKey', 'omdbKey', 'osKey'].forEach(function (id) {
+        document.getElementById(id).oninput = function () { settings[id] = this.value.trim(); };
+    });
+    document.getElementById('sublang').oninput = function () { settings.subtitleLang = this.value.trim().toLowerCase(); };
+
+    document.getElementById('save').onclick = function () {
+        var b = this, s = document.getElementById('status');
+        b.disabled = true; b.textContent = 'Applying…';
+        postSettings(function (err) {
+            b.disabled = false; b.textContent = 'Apply to TV';
+            s.textContent = err ? 'Could not reach the TV — check WiFi' :
+                'Applied to TV at ' + new Date().toLocaleTimeString();
+        });
+    };
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+    "id": "com.stewart.solstice",
+    "version": "1.0.0",
+    "vendor": "Stewart",
+    "vendorurl": "https://github.com/stewart",
+    "appauthor": "Stewart",
+    "appauthoremail": "",
+    "type": "web",
+    "main": "index.html",
+    "title": "Solstice TV",
+    "icon": "assets/icon.png",
+    "largeIcon": "assets/largeIcon.png",
+    "bgColor": "#f2f4f8",
+    "splashBackground": "assets/splash.png",
+    "resolution": "1920x1080",
+    "uiRevision": 2,
+    "disableBackHistoryAPI": true,
+    "noSplashOnLaunch": false
+}
