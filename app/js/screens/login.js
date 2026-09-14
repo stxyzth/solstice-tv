@@ -103,7 +103,7 @@
                 XTV.ui.modal({
                     title: 'Connection failed',
                     cls: 'modal-narrow',
-                    body: '<p class="modal-text">' + U.esc(err.message || String(err)) + '</p><p class="modal-dim">Tips: include the port (e.g. http://host:8080). The server must be an Xtream Codes panel. Some providers block non-TV clients.</p>',
+                    body: '<p class="modal-text">' + U.esc(err.message || String(err)) + '</p><p class="modal-dim">Tips: include the port (e.g. http://host:8080). The server must be an Xtream Codes panel. When run via npm run serve, requests are relayed through this machine automatically.</p>',
                     buttons: [{ label: 'OK', primary: true, onSelect: function (c) { c(); } }]
                 });
             });

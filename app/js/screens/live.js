@@ -318,6 +318,7 @@
             return {
                 render: render,
                 jumpToNow: jumpToNow,
+                resetData: function () { guideData = {}; shortPending = {}; },
                 destroy: function () { if (nowTimer) clearInterval(nowTimer); nowTimer = null; }
             };
         })();
@@ -427,6 +428,14 @@
         });
 
         root._onDestroy = function () { guideApi.destroy(); clearTimeout(zapT); };
+
+        // when the full guide arrives, drop any short-EPG fallback data and redraw
+        XTV.epg.loadFull().then(function (g) {
+            if (g && guideWrap.isConnected) {
+                guideApi.resetData();
+                guideApi.render(true);
+            }
+        });
 
         renderChips();
         showView(false);

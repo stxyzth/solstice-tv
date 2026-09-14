@@ -109,9 +109,21 @@
     // timeout, headers, body} → cb(err, resp, xhr)
     window.XTV = window.XTV || {};
     XTV.net = {
+        // Desktop browsers can't call IPTV portals cross-origin (no CORS headers).
+        // When the app is served over HTTP outside webOS, cross-origin requests are
+        // transparently relayed through the bundled sync server (/api/proxy).
+        _relay: (location.protocol === 'http:' || location.protocol === 'https:') &&
+                !(window.PalmSystem || window.webOS),
         request: function (opts, cb) {
+            var url = opts.url;
+            if (this._relay && /^https?:\/\//i.test(url)) {
+                var tgtHost = url.replace(/^https?:\/\//i, '').split('/')[0].toLowerCase();
+                if (tgtHost !== location.host.toLowerCase()) {
+                    url = '/api/proxy?url=' + encodeURIComponent(url);
+                }
+            }
             var xhr = new XMLHttpRequest();
-            xhr.open(opts.method || 'GET', opts.url, true);
+            xhr.open(opts.method || 'GET', url, true);
             xhr.responseType = opts.responseType === 'json' ? 'text' : (opts.responseType || 'text');
             xhr.timeout = opts.timeout || 20000;
             if (opts.headers) {

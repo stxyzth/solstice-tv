@@ -9,7 +9,7 @@
   "rootRequired": false,
   "ipkUrl": "https://raw.githubusercontent.com/stxyzth/solstice-tv/main/dist/com.stewart.solstice_1.0.0_all.ipk",
   "ipkHash": {
-    "sha256": "54f79c5e610442898aaa130a984676e27fae4ed961cbd61b07d5cd405a5fe664"
+    "sha256": "2b82ae290dd95fdc2f90bff1c026d7e5117fb06ffdc347e539ce416094cc8421"
   },
-  "ipkSize": 289582
+  "ipkSize": 289714
 }

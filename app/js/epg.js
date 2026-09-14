@@ -33,12 +33,7 @@
                     if (data.length > 2 && data[0] === 0x1f && data[1] === 0x8b && window.pako) {
                         data = pako.ungzip(data);
                     }
-                    var text = '';
-                    var chunk = 65536;
-                    for (var i = 0; i < data.length; i += chunk) {
-                        text += String.fromCharCode.apply(null, data.subarray(i, Math.min(i + chunk, data.length)));
-                    }
-                    parseXmltv(text);
+                    parseXmltv(bytesToUtf8(data));
                     resolve(full);
                 } catch (e) {
                     resolve(null);
@@ -46,6 +41,19 @@
             });
         });
         return fullLoading;
+    }
+
+    function bytesToUtf8(data) {
+        // XMLTV is UTF-8: decode properly (TextDecoder on modern engines,
+        // escape-trick fallback for Chromium 38) or multibyte titles turn to mojibake
+        if (window.TextDecoder) {
+            try { return new TextDecoder('utf-8').decode(data); } catch (e) {}
+        }
+        var s = '', chunk = 65536;
+        for (var i = 0; i < data.length; i += chunk) {
+            s += String.fromCharCode.apply(null, data.subarray(i, Math.min(i + chunk, data.length)));
+        }
+        try { return decodeURIComponent(escape(s)); } catch (e) { return s; }
     }
 
     function parseXmltv(text) {

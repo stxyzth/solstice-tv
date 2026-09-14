@@ -12,6 +12,8 @@ import os
 import socket
 import threading
 import time
+import urllib.parse
+import urllib.request
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 
 APP_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'app'))
@@ -66,6 +68,10 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         path = self.path.split('?')[0]
+        if path == '/api/proxy':
+            return self.relay()
+
+        path = self.path.split('?')[0]
         if path == '/api/host':
             self._json({'ip': lan_ip(), 'port': PORT})
         elif path.startswith('/api/state/'):
@@ -94,6 +100,29 @@ class Handler(SimpleHTTPRequestHandler):
             self.end_headers()
         else:
             super().do_GET()
+
+    def relay(self):
+        """LAN relay for browser mode: desktop pages can't call providers
+        cross-origin (no CORS headers on panels), so the sync server fetches
+        on their behalf. Trusted-home-network convenience only."""
+        qs = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        target = (qs.get('url') or [''])[0]
+        if not target.startswith('http'):
+            return self._json({'error': 'bad url'}, 400)
+        try:
+            req = urllib.request.Request(target, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=60) as r:
+                body = r.read()
+                ctype = r.headers.get('Content-Type', 'application/octet-stream')
+        except Exception as e:
+            return self._json({'error': str(e)}, 502)
+        self.send_response(200)
+        self.send_header('Content-Type', ctype)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Cache-Control', 'no-store')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def do_POST(self):
         if self.path.startswith('/api/state/'):
