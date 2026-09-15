@@ -59,10 +59,10 @@
             var html =
                 '<div class="chip2' + (viewMode === 'guide' ? ' on' : '') + '" data-x data-view="guide">Guide</div>' +
                 '<div class="chip2' + (viewMode === 'grid' ? ' on' : '') + '" data-x data-view="grid">Channels</div>';
-            html += '<div class="chip2" data-x data-cat="all"' + (curCat === 'all' && !favOnly ? ' style="background:#fff;color:#000;border-color:#fff"' : '') + '>All</div>';
-            html += '<div class="chip2" data-x data-cat="fav"' + (favOnly ? ' style="background:#fff;color:#000;border-color:#fff"' : '') + '>★ Favorites</div>';
+            html += '<div class="chip2' + (curCat === 'all' && !favOnly ? ' on' : '') + '" data-x data-cat="all">All</div>';
+            html += '<div class="chip2' + (favOnly ? ' on' : '') + '" data-x data-cat="fav">★ Favorites</div>';
             catsList().slice(2).forEach(function (c) {
-                html += '<div class="chip2" data-x data-cat="' + U.esc(c.id) + '"' + (curCat === c.id && !favOnly ? ' style="background:#fff;color:#000;border-color:#fff"' : '') + '>' + U.esc(c.name) + '</div>';
+                html += '<div class="chip2' + (curCat === c.id && !favOnly ? ' on' : '') + '" data-x data-cat="' + U.esc(c.id) + '">' + U.esc(c.name) + '</div>';
             });
             chips.innerHTML = html;
         }

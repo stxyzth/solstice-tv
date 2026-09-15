@@ -106,7 +106,7 @@
             } else {
                 v.src = url; try { v.play(); } catch (e) {}
             }
-            tiles.push({ ch: ch, video: v, el: tile });
+            tiles.push({ ch: ch, video: v, el: tile, _hls: h || null });
         });
         sel = 0;
         highlight();

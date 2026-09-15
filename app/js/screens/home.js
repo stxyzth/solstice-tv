@@ -229,7 +229,7 @@
         var prof = XTV.store.activeProfile();
         var exp = ui.exp_date ? new Date(parseInt(ui.exp_date, 10) * 1000) : null;
         status.innerHTML =
-            '<span class="chip">' + U.esc(app.demo ? 'Demo Mode' : (prof ? prof.name : 'No profile')) + '</span>' +
+            '<span class="chip">' + U.esc(XTV.app.demo ? 'Demo Mode' : (prof ? prof.name : 'No profile')) + '</span>' +
             '<span class="chip">' + (cat.live || []).length + ' channels</span>' +
             '<span class="chip">' + (cat.vod || []).length + ' movies</span>' +
             '<span class="chip">' + (cat.series || []).length + ' series</span>' +

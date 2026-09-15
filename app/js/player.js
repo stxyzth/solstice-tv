@@ -191,6 +191,7 @@
     /* ---------------- public API ---------------- */
     function play(opts) {
         ensureDom();
+        optsOnExit = null;
         state = opts;
         wasStopped = false;
         startedOnce = false;
@@ -222,6 +223,7 @@
         saveProgress(true);
         stopTimers();
         destroyHls();
+        if (subBlobUrl) { try { URL.revokeObjectURL(subBlobUrl); } catch (e) {} subBlobUrl = null; }
         try { video.pause(); video.removeAttribute('src'); video.load(); } catch (e) {}
         overlay.classList.remove('on');
         document.body.classList.remove('player-active');
@@ -833,14 +835,16 @@
         return vtt;
     }
 
+    var subBlobUrl = null;
     function addSubTrack(vtt) {
         disableSubs();
+        if (subBlobUrl) { try { URL.revokeObjectURL(subBlobUrl); } catch (e) {} subBlobUrl = null; }
         var blob = new Blob([vtt], { type: 'text/vtt' });
-        var url = URL.createObjectURL(blob);
+        subBlobUrl = URL.createObjectURL(blob);
         var track = document.createElement('track');
         track.kind = 'subtitles';
         track.label = 'OpenSubtitles';
-        track.src = url;
+        track.src = subBlobUrl;
         track['default'] = true;
         video.appendChild(track);
         setTimeout(function () {
@@ -939,6 +943,7 @@
     function stopTimers() {
         clearInterval(infoTimer); clearInterval(watchdog);
         clearTimeout(hideTimer); clearTimeout(zapTimer);
+        if (nextCountdown) { nextCountdown.cancel(); nextCountdown = null; }
         stopProgressSaver();
     }
 
