@@ -8,6 +8,7 @@
 
     var video = null, overlay = null, hls = null;
     var state = null;          // active play opts
+    var pipMode = false;       // picture-in-picture mini player
     var controlsOn = false, zone = 'scrub', btnIdx = 0;
     var hideTimer = null, saveTimer = null, watchdog = null, infoTimer = null;
     var sleepTimer = null, sleepEnd = 0;
@@ -50,6 +51,9 @@
         document.body.appendChild(overlay);
         video = overlay.querySelector('#ptv');
         wireVideo();
+        overlay.addEventListener('click', function () {
+            if (pipMode) exitPip();
+        });
     }
 
     function wireVideo() {
@@ -221,12 +225,14 @@
     function exit() {
         if (wasStopped) return;
         wasStopped = true;
+        pipMode = false;
         saveProgress(true);
         stopTimers();
         destroyHls();
         if (subBlobUrl) { try { URL.revokeObjectURL(subBlobUrl); } catch (e) {} subBlobUrl = null; }
         try { video.pause(); video.removeAttribute('src'); video.load(); } catch (e) {}
         overlay.classList.remove('on');
+        overlay.classList.remove('pip');
         document.body.classList.remove('player-active');
         XTV.focus.enabled(true);
         state = null;
@@ -377,6 +383,33 @@
         };
     }
 
+    /* ---------------- picture-in-picture ---------------- */
+    function enterPip() {
+        if (!state || pipMode) return;
+        pipMode = true;
+        showControls(false);
+        overlay.classList.add('pip');
+        document.body.classList.remove('player-active');
+        XTV.focus.enabled(true);
+        XTV.ui.toast('Mini player — press PiP or click to restore');
+    }
+
+    function exitPip() {
+        if (!pipMode) return;
+        pipMode = false;
+        overlay.classList.remove('pip');
+        document.body.classList.add('player-active');
+        XTV.focus.enabled(false);
+        showControls(true);
+    }
+
+    function togglePip() {
+        if (pipMode) exitPip();
+        else enterPip();
+    }
+
+    function isPip() { return pipMode; }
+
     /* ---------------- sleep timer ---------------- */
     function sleepMenu() {
         clearTimeout(hideTimer);
@@ -462,6 +495,7 @@
             BUTTONS.push({ icon: 'CC', label: 'Subtitles', cb: subtitleMenu });
             if (state.onNext) BUTTONS.push({ icon: '⏭', label: 'Next episode', cb: function () { var n = state.onNext(); if (n) play(n); else XTV.ui.toast('No next episode'); } });
         }
+        BUTTONS.push({ icon: '🖼', label: pipMode ? 'Restore' : 'PiP', cb: togglePip });
         BUTTONS.push({ icon: '🕘', label: 'History', cb: historyMenu });
         BUTTONS.push({ icon: '⚙', label: 'Quality / Audio', cb: trackMenu });
         BUTTONS.push({ icon: '💤', label: sleepTimer ? Math.ceil((sleepEnd - Date.now()) / 60000) + 'm' : 'Sleep', cb: sleepMenu });
@@ -922,6 +956,11 @@
     var repeatT0 = 0;
     function onKey(key) {
         if (!state) return false;
+        if (pipMode) {
+            if (key === 'ok' || key === 'playpause') { exitPip(); return true; }
+            if (key === 'stop') { exit(); return true; }
+            return false;
+        }
         if (nextCountdown) {
             if (key === 'ok') { nextCountdown.playNow(); nextCountdown = null; return true; }
             if (key === 'back') { nextCountdown.cancel(); nextCountdown = null; return true; }
@@ -1017,6 +1056,7 @@
     XTV.player = {
         play: play, exit: exit, isActive: isActive, onKey: onKey,
         tuneTo: tuneTo, bindExit: bindExit,
+        enterPip: enterPip, exitPip: exitPip, togglePip: togglePip, isPip: isPip,
         video: function () { return video; }
     };
 })();

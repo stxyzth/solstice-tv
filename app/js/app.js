@@ -529,8 +529,22 @@
             else if (key === 'ok') { XTV.focus.select(); }
             else if (key === 'left' || key === 'right' || key === 'up' || key === 'down') { XTV.focus.move(key); }
             else handled = false;
-        } else if (XTV.player.isActive()) {
+        } else if (XTV.player.isActive() && !XTV.player.isPip()) {
             handled = XTV.player.onKey(key);
+        } else if (XTV.player.isPip()) {
+            // PiP mode: player gets first shot at the key (ok/stop),
+            // if it declines, fall through to normal app navigation
+            if (!XTV.player.onKey(key)) {
+                if (key === 'back') { app.back(); }
+                else if (key === 'left' || key === 'right' || key === 'up' || key === 'down') { handled = XTV.focus.move(key); }
+                else if (key === 'ok') { handled = XTV.focus.select(); }
+                else {
+                    var pipEv = document.createEvent('CustomEvent');
+                    pipEv.initCustomEvent('xfkey', true, false, key);
+                    var pipTarget = app.navStack.length && app.navStack[app.navStack.length - 1].el;
+                    if (pipTarget) pipTarget.dispatchEvent(pipEv);
+                }
+            }
         } else if (XTV.screens.multiview.active()) {
             // multi-view grid handles its own D-pad
             if (key === 'back') { app.back(); }

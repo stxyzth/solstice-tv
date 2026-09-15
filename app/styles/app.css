@@ -677,6 +677,40 @@ img { -webkit-user-drag: none; }
 .player.on { display: block; }
 body.player-active #app { visibility: hidden; }
 
+/* picture-in-picture: shrink player to corner, app visible behind */
+.player.pip {
+    inset: auto;
+    right: 32px; bottom: 32px;
+    width: 420px; height: 236px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.7), 0 0 0 2px rgba(255, 255, 255, 0.08);
+    -webkit-transition: all .35s cubic-bezier(.2,.8,.2,1);
+    transition: all .35s cubic-bezier(.2,.8,.2,1);
+    cursor: pointer;
+    z-index: 250;
+}
+.player.pip video { object-fit: cover; }
+.player.pip .player-shade,
+.player.pip .player-top,
+.player.pip .player-bottom,
+.player.pip .player-center,
+.player.pip .player-spinner { display: none !important; }
+.player.pip::after {
+    content: '▶ Click to restore';
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 10px 16px;
+    font-size: 15px; font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    text-align: center;
+    background: -webkit-linear-gradient(bottom, rgba(0,0,0,0.7), rgba(0,0,0,0));
+    background: linear-gradient(to top, rgba(0,0,0,0.7), rgba(0,0,0,0));
+    opacity: 0;
+    -webkit-transition: opacity .2s;
+    transition: opacity .2s;
+}
+.player.pip:hover::after { opacity: 1; }
+
 .player video {
     position: absolute; inset: 0;
     width: 100%; height: 100%;
