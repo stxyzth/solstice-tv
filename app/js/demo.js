@@ -4,37 +4,39 @@
     'use strict';
     var U = XTV.util;
 
+    var IMG = 'https://image.tmdb.org/t/p/';
+
     var LIVE_CHANNELS = [
-        { cat: 'News', name: 'NASA TV', url: 'https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8', icon: '' },
-        { cat: 'News', name: 'Al Jazeera English', url: 'https://live-hls-web-aje.getaj.net/AJE/01.m3u8', icon: '' },
-        { cat: 'News', name: 'DW News', url: 'https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8', icon: '' },
-        { cat: 'News', name: 'France 24 English', url: 'https://stream.france24.com/live/hls/f24_en.m3u8', icon: '' },
-        { cat: 'News', name: 'CGTN', url: 'https://news.cgtn.com/resource/live/english/cgtn-news.m3u8', icon: '' },
-        { cat: 'Entertainment', name: 'Pluto TV Movies', url: 'https://service-stitcher.clusters.pluto.tv/v1/stitch/embed/hls/channel/5f1abd3e4613de000749a3fc/master.m3u8', icon: '' },
-        { cat: 'Music', name: 'Lofi Girl Radio', url: 'https://play.streamafrica.net/lofiradio', icon: '' },
-        { cat: 'Science', name: 'NASA ISS Live', url: 'https://ntv2.akamaized.net/hls/live/2014076/NASA-NTV2-HLS/master.m3u8', icon: '' },
-        { cat: 'Entertainment', name: 'ABC News Live', url: 'https://content.uplynk.com/channel/3324f2467c414329b3b0cc5cd987b6be.m3u8', icon: '' },
-        { cat: 'Sports', name: 'Red Bull TV', url: 'https://rbmn-live.akamaized.net/hls/live/590964/BossLifeLive/master.m3u8', icon: '' }
+        { cat: 'News', name: 'NASA TV', url: 'https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8', icon: IMG + 'w185/jbwYaoYWJwMBjpOVmmCf1pOjI5g.jpg' },
+        { cat: 'News', name: 'Al Jazeera English', url: 'https://live-hls-web-aje.getaj.net/AJE/01.m3u8', icon: IMG + 'w185/k0fxqfczCuFaNjx3JgRqVlBGevI.jpg' },
+        { cat: 'News', name: 'DW News', url: 'https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8', icon: IMG + 'w185/jdfhzXAPv4jAkWS6EU9A8Gkidbj.jpg' },
+        { cat: 'News', name: 'France 24 English', url: 'https://stream.france24.com/live/hls/f24_en.m3u8', icon: IMG + 'w185/hFQAqGsowV1PFArHMiCA40j7JES.jpg' },
+        { cat: 'News', name: 'CGTN', url: 'https://news.cgtn.com/resource/live/english/cgtn-news.m3u8', icon: IMG + 'w185/s74Y1gKnMFjifGv3fExiSFcBcGN.jpg' },
+        { cat: 'Entertainment', name: 'Pluto TV Movies', url: 'https://service-stitcher.clusters.pluto.tv/v1/stitch/embed/hls/channel/5f1abd3e4613de000749a3fc/master.m3u8', icon: IMG + 'w185/xGexTKCJDkl12dTW4YCBDXWb1AD.jpg' },
+        { cat: 'Music', name: 'Lofi Girl Radio', url: 'https://play.streamafrica.net/lofiradio', icon: IMG + 'w185/A4OEkFBg2gJqpOJLDNjIlnF1Mho.jpg' },
+        { cat: 'Science', name: 'NASA ISS Live', url: 'https://ntv2.akamaized.net/hls/live/2014076/NASA-NTV2-HLS/master.m3u8', icon: IMG + 'w185/jbwYaoYWJwMBjpOVmmCf1pOjI5g.jpg' },
+        { cat: 'Entertainment', name: 'ABC News Live', url: 'https://content.uplynk.com/channel/3324f2467c414329b3b0cc5cd987b6be.m3u8', icon: IMG + 'w185/gPbIHyfEV1PvnltSJOEfIOYFBvz.jpg' },
+        { cat: 'Sports', name: 'Red Bull TV', url: 'https://rbmn-live.akamaized.net/hls/live/590964/BossLifeLive/master.m3u8', icon: IMG + 'w185/nEJJYqRrXtiGlaMSlVfd8AaJFPo.jpg' }
     ];
 
     var LIVE_CATS_LIST = ['News', 'Entertainment', 'Sports', 'Music', 'Science'];
 
-    // Real free VOD from various HLS test sources
+    // Real free VOD from various HLS test sources — with TMDB poster art
     var REAL_MOVIES = [
-        { name: 'Big Buck Bunny', genre: 'Animation', year: '2008', rating: 7.1, url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', plot: 'A giant rabbit seeks revenge on three bullying rodents in this open-source animated short that became a standard for video testing worldwide.' },
-        { name: 'Sintel', genre: 'Animation', year: '2010', rating: 7.5, url: 'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8', plot: 'A lone warrior searches for a baby dragon she befriended, braving dangerous lands and discovering the true cost of her quest.' },
-        { name: 'Tears of Steel', genre: 'Sci-Fi', year: '2012', rating: 6.4, url: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8', plot: 'In a dystopian future, a group of warriors and scientists must reverse the effects of a devastating robot invasion using untested time-travel technology.' },
-        { name: 'Elephant\'s Dream', genre: 'Animation', year: '2006', rating: 6.0, url: 'https://test-streams.mux.dev/pts_shift/master.m3u8', plot: 'Two characters explore a surreal machine-world, finding that their perceptions of reality differ in fundamental and irreconcilable ways.' },
-        { name: 'Caminandes: Llama Drama', genre: 'Comedy', year: '2013', rating: 7.3, url: 'https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8', plot: 'A determined llama tries everything to cross a road blocked by an uncooperative fence in the Patagonian steppe.' },
-        { name: 'Spring', genre: 'Drama', year: '2019', rating: 7.8, url: 'https://test-streams.mux.dev/test_001/stream.m3u8', plot: 'A shepherd dog and his owner live in a peaceful valley until a playful deer changes their quiet existence forever.' },
-        { name: 'Agent 327: Operation Barbershop', genre: 'Action', year: '2017', rating: 7.0, url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', plot: 'Dutch secret agent 327 investigates a suspicious barbershop in this fast-paced animated action short.' },
-        { name: 'Cosmos Laundromat', genre: 'Sci-Fi', year: '2015', rating: 6.8, url: 'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8', plot: 'A suicidal sheep on an isolated island meets a mysterious being who offers him the chance to live countless alternative lives.' }
+        { name: 'Big Buck Bunny', genre: 'Animation', year: '2008', rating: 7.1, url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', plot: 'A giant rabbit seeks revenge on three bullying rodents in this open-source animated short that became a standard for video testing worldwide.', poster: IMG + 'w342/xBHvZcjRiWyobQ9kxBhO6B2dtRI.jpg', backdrop: IMG + 'w1280/aJn9XeesqsrSLKcHfHP4u5985hn.jpg' },
+        { name: 'Sintel', genre: 'Animation', year: '2010', rating: 7.5, url: 'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8', plot: 'A lone warrior searches for a baby dragon she befriended, braving dangerous lands and discovering the true cost of her quest.', poster: IMG + 'w342/wQtaGm8cQlFCl2gVJMlODhv0MUI.jpg', backdrop: IMG + 'w1280/lxFjt2rKFgmGBHPfBSOuLiXVtOV.jpg' },
+        { name: 'Tears of Steel', genre: 'Sci-Fi', year: '2012', rating: 6.4, url: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8', plot: 'In a dystopian future, a group of warriors and scientists must reverse the effects of a devastating robot invasion using untested time-travel technology.', poster: IMG + 'w342/q3PohxW5NorpBEEi8eYbyxSTVDz.jpg', backdrop: IMG + 'w1280/pXIZJKlGHhsqNdFaZrtJqd4290A.jpg' },
+        { name: 'Elephant\'s Dream', genre: 'Animation', year: '2006', rating: 6.0, url: 'https://test-streams.mux.dev/pts_shift/master.m3u8', plot: 'Two characters explore a surreal machine-world, finding that their perceptions of reality differ in fundamental and irreconcilable ways.', poster: IMG + 'w342/mzdp94yTJnoxkrQEaigIhsPKIEb.jpg', backdrop: IMG + 'w1280/iQb0bEx9BOTaSLijqJNhec2OJqZ.jpg' },
+        { name: 'Caminandes: Llama Drama', genre: 'Comedy', year: '2013', rating: 7.3, url: 'https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8', plot: 'A determined llama tries everything to cross a road blocked by an uncooperative fence in the Patagonian steppe.', poster: IMG + 'w342/cTa2xAChfKaEqMR6cxJ1JHq4X78.jpg', backdrop: IMG + 'w1280/bYCJgesKygSzSjpWEBGBEyLCZhm.jpg' },
+        { name: 'Spring', genre: 'Drama', year: '2019', rating: 7.8, url: 'https://test-streams.mux.dev/test_001/stream.m3u8', plot: 'A shepherd dog and his owner live in a peaceful valley until a playful deer changes their quiet existence forever.', poster: IMG + 'w342/wjICEcLCas1lMOwkZNkaFaQ6iuD.jpg', backdrop: IMG + 'w1280/gJL5kp5FMopB2sN4WZYnNT5RJQI.jpg' },
+        { name: 'Agent 327: Operation Barbershop', genre: 'Action', year: '2017', rating: 7.0, url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', plot: 'Dutch secret agent 327 investigates a suspicious barbershop in this fast-paced animated action short.', poster: IMG + 'w342/pTCFMdyo2mUeGaEWxFkEFft23vL.jpg', backdrop: IMG + 'w1280/lgDnO3sBGm0bFYPBR2SZBKZ8Gw8.jpg' },
+        { name: 'Cosmos Laundromat', genre: 'Sci-Fi', year: '2015', rating: 6.8, url: 'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8', plot: 'A suicidal sheep on an isolated island meets a mysterious being who offers him the chance to live countless alternative lives.', poster: IMG + 'w342/pX1k9rQGJqksRkklBHYsVOaIqbq.jpg', backdrop: IMG + 'w1280/uMJFzi0FqBledrLJrKZSjjVv35D.jpg' }
     ];
 
     var REAL_SERIES = [
-        { name: 'Blender Open Movies', genre: 'Animation', year: '2006', plot: 'The complete collection of open-source animated films from the Blender Foundation.', seasons: 3 },
-        { name: 'NASA Explorers', genre: 'Documentary', year: '2018', plot: 'Scientists and engineers at NASA push the boundaries of space exploration.', seasons: 2 },
-        { name: 'Nature Chronicles', genre: 'Documentary', year: '2020', plot: 'A deep dive into the planet\'s most extraordinary ecosystems and the creatures that call them home.', seasons: 2 }
+        { name: 'Blender Open Movies', genre: 'Animation', year: '2006', plot: 'The complete collection of open-source animated films from the Blender Foundation.', seasons: 3, poster: IMG + 'w342/wQtaGm8cQlFCl2gVJMlODhv0MUI.jpg', backdrop: IMG + 'w1280/lxFjt2rKFgmGBHPfBSOuLiXVtOV.jpg' },
+        { name: 'NASA Explorers', genre: 'Documentary', year: '2018', plot: 'Scientists and engineers at NASA push the boundaries of space exploration.', seasons: 2, poster: IMG + 'w342/jbwYaoYWJwMBjpOVmmCf1pOjI5g.jpg', backdrop: IMG + 'w1280/o7qi2v4kzRMagxLDMhnlIboMC0F.jpg' },
+        { name: 'Nature Chronicles', genre: 'Documentary', year: '2020', plot: 'A deep dive into the planet\'s most extraordinary ecosystems and the creatures that call them home.', seasons: 2, poster: IMG + 'w342/qGeqCaXlHsHfeSsafFGuYkVkAm5.jpg', backdrop: IMG + 'w1280/etj8E2o0Bud0HkONVQPjyCkIvpv.jpg' }
     ];
 
     var PROG_WORDS = ['Morning Report', 'Talk of the Town', 'Deep Dive', 'Live Coverage', 'The Big Interview', 'Classic Rewind', 'Prime Special', 'Late Night Line', 'Game of the Week', 'World in Focus', 'Kitchen Chronicles', 'Frontier Days'];
@@ -90,14 +92,16 @@
             var catIdx = hash(m.genre) % vodCats.length;
             return {
                 kind: 'movie', id: 'M' + (1000 + i), name: m.name,
-                icon: U.placeholder(m.name, 'poster', hash(m.name) % 360),
+                icon: m.poster || U.placeholder(m.name, 'poster', hash(m.name) % 360),
                 catId: vodCats[catIdx].id,
                 rating: m.rating,
                 year: m.year,
                 added: now - i * 2000000,
                 container: 'mp4',
                 plot: m.plot,
-                _demoUrl: m.url
+                _demoUrl: m.url,
+                _poster: m.poster,
+                _backdrop: m.backdrop
             };
         });
 
@@ -106,13 +110,15 @@
         var series = REAL_SERIES.map(function (s, idx) {
             return {
                 kind: 'series', id: 'S' + idx, name: s.name,
-                icon: U.placeholder(s.name, 'poster', hash(s.name) % 360),
+                icon: s.poster || U.placeholder(s.name, 'poster', hash(s.name) % 360),
                 catId: serCats[idx % serCats.length].id,
                 rating: 6 + (hash(s.name) % 30) / 10,
                 added: now - idx * 5000000,
                 plot: s.plot, genre: s.genre, cast: CAST.join(','),
                 year: s.year,
-                _seasons: s.seasons
+                _seasons: s.seasons,
+                _poster: s.poster,
+                _backdrop: s.backdrop
             };
         });
 
@@ -174,6 +180,53 @@
                 youtube: ''
             });
         };
+
+        // Patch metadata to return poster/backdrop art for demo items
+        var origMovieDetail = XTV.meta.movieDetail;
+        XTV.meta.movieDetail = function (item) {
+            var v = catalog.vod.find(function (x) { return x.name === item.name; });
+            if (v && v._poster) {
+                return Promise.resolve({
+                    title: v.name,
+                    poster: v._poster,
+                    backdrop: v._backdrop,
+                    backdropBig: v._backdrop,
+                    overview: v.plot,
+                    year: v.year,
+                    rating: v.rating,
+                    runtime: 12,
+                    genres: [v.plot ? v.plot.split(' ')[0] : 'Animation'],
+                    cast: CAST.map(function (c) { return { name: c, role: 'Voice', photo: U.placeholder(c, 'wide') }; }),
+                    similar: catalog.vod.filter(function (x) { return x.id !== v.id; }).slice(0, 6).map(function (x) {
+                        return { title: x.name, year: x.year, poster: x._poster || x.icon };
+                    })
+                });
+            }
+            if (origMovieDetail) return origMovieDetail(item);
+            return Promise.resolve(null);
+        };
+        var origSeriesDetail = XTV.meta.seriesDetail;
+        XTV.meta.seriesDetail = function (item) {
+            var s = catalog.series.find(function (x) { return x.name === item.name; });
+            if (s && s._poster) {
+                return Promise.resolve({
+                    title: s.name,
+                    poster: s._poster,
+                    backdrop: s._backdrop,
+                    backdropBig: s._backdrop,
+                    overview: s.plot,
+                    year: s.year,
+                    rating: s.rating,
+                    genres: [s.genre || 'Animation'],
+                    cast: CAST.map(function (c) { return { name: c, role: '', photo: U.placeholder(c, 'wide') }; }),
+                    similar: []
+                });
+            }
+            if (origSeriesDetail) return origSeriesDetail(item);
+            return Promise.resolve(null);
+        };
+        // Override enabled() so home screen fetches trending/similar
+        XTV.meta.enabled = function () { return true; };
 
         M.seriesInfo = function (id) {
             var it = catalog.series.find(function (x) { return x.id === id; }) || { name: 'Show', _seasons: 2 };
