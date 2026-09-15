@@ -664,6 +664,7 @@ img { -webkit-user-drag: none; }
 .set-action { -webkit-justify-content: center; justify-content: center; font-size: 24px; font-weight: 700; }
 .diag { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 24px 30px; font-size: 20px; color: var(--text-dim); line-height: 1.7; margin-bottom: 14px; box-shadow: var(--shadow); }
 .diag-title { font-size: 24px; font-weight: 800; margin-bottom: 10px; color: var(--text); }
+.diag-error { color: #ff6b6b; }
 .about { text-align: center; padding: 40px 0; }
 
 /* ---------------- player (stays dark — it lives over video) ---------------- */

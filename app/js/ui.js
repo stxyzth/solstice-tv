@@ -135,7 +135,8 @@
         // preserve focus across window rebuilds (scroll/edge) so focus never
         // lands on a detached node or escapes to the tab bar
         var prev = XTV.focus.current();
-        var prevIdx = (prev && this.root.contains(prev) && prev._idx !== undefined) ? prev._idx : null;
+        var prevInGrid = prev && this.root.contains(prev);
+        var prevIdx = (prevInGrid && prev._idx !== undefined) ? prev._idx : null;
         this.win.innerHTML = '';
         this._map = {};
         this.win.style.transform = 'translateY(' + (firstRow * this.rowH + 10) + 'px)';
@@ -159,6 +160,12 @@
         if (prevIdx !== null) {
             var pe = this._map[Math.min(prevIdx, this.items.length - 1)];
             if (pe) { XTV.focus.setFocused(pe); return; }
+        }
+        // if previous focus was inside this grid but no prevIdx matched,
+        // restore to first visible card to prevent focus escaping
+        if (prevInGrid) {
+            var firstKey = Object.keys(this._map)[0];
+            if (firstKey != null) XTV.focus.setFocused(this._map[firstKey]);
         }
     };
 

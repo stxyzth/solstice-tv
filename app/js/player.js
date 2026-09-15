@@ -297,6 +297,7 @@
 
     function resetWatchdog() {
         clearInterval(watchdog);
+        stalls = 0;
         watchdog = setInterval(function () {
             if (!state) return;
             if (video.readyState < 2 && !video.paused) {

@@ -254,7 +254,11 @@
                     target = onnow[0] || lanes.querySelector('.pgm[data-x]');
                 }
                 if (target) XTV.focus.setFocused(target);
-                else if (list.length) XTV.focus.refresh();
+                else if (list.length) {
+                    var firstChip = chips.querySelector('[data-x]');
+                    if (firstChip) XTV.focus.setFocused(firstChip);
+                    else XTV.focus.refresh();
+                }
             }
 
             function syncOverlay() {

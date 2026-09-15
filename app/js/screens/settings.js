@@ -316,7 +316,7 @@
                     '<div>EPG: ' + (XTV.epg.fullInfo() ? 'full guide loaded' : 'short EPG only') + '</div>' +
                     (XTV.app.log && XTV.app.log.length ?
                         '<div class="diag-title" style="margin-top:14px">Recent errors</div>' +
-                        XTV.app.log.map(function (l) { return '<div style="color:#ff6961">' + U.esc(l) + '</div>'; }).join('') : '');
+                        XTV.app.log.map(function (l) { return '<div class="diag-error">' + U.esc(l) + '</div>'; }).join('') : '');
                 w.appendChild(diag);
                 w.appendChild(rowAction('Clear metadata & catalog cache', function () {
                     XTV.store.clearCache().then(function () { XTV.ui.toast('Cache cleared'); });
