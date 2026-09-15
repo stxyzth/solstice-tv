@@ -51,9 +51,12 @@
         var btns = U.el('div', 'login-buttons');
         var connect = U.el('div', 'btn btn-primary', 'Save & Connect');
         connect.setAttribute('data-x', '');
+        var m3uBtn = U.el('div', 'btn', 'Import M3U Playlist');
+        m3uBtn.setAttribute('data-x', '');
         var demo = U.el('div', 'btn', 'Explore Demo Mode');
         demo.setAttribute('data-x', '');
         btns.appendChild(connect);
+        btns.appendChild(m3uBtn);
         btns.appendChild(demo);
         form.appendChild(btns);
 
@@ -106,6 +109,32 @@
                     cls: 'modal-narrow',
                     body: '<p class="modal-text">' + U.esc(err.message || String(err)) + '</p><p class="modal-dim">Tips: include the port (e.g. http://host:8080). The server must be an Xtream Codes panel. When run via npm run serve, requests are relayed through this machine automatically.</p>',
                     buttons: [{ label: 'OK', primary: true, onSelect: function (c) { c(); } }]
+                });
+            });
+        });
+
+        m3uBtn.addEventListener('xfselect', function () {
+            XTV.ui.promptText('M3U/M3U8 playlist URL', '', false, function (url) {
+                if (!url || !url.trim()) return;
+                XTV.ui.spinner(true, 'Loading M3U playlist…');
+                XTV.net.request({ url: url.trim(), responseType: 'text', timeout: 30000 }, function (err, text) {
+                    XTV.ui.spinner(false);
+                    if (err || !text) { XTV.ui.toast('Could not load playlist'); return; }
+                    var parsed = XTV.m3u.parse(text);
+                    if (!parsed.length) { XTV.ui.toast('No channels found in playlist'); return; }
+                    var profile = { name: 'M3U Playlist', type: 'm3u', m3uUrl: url.trim(), m3uChannels: parsed };
+                    XTV.store.upsertProfile(profile);
+                    XTV.store.setActiveProfile(profile.id);
+                    XTV.app.catalog = {
+                        liveCats: XTV.m3u.categories(parsed),
+                        live: parsed,
+                        vodCats: [], vod: [],
+                        serCats: [], series: []
+                    };
+                    XTV.app.rawCatalog = XTV.app.catalog;
+                    XTV.app.booted = true;
+                    XTV.app.setTab('home');
+                    XTV.ui.toast('Loaded ' + parsed.length + ' channels from M3U');
                 });
             });
         });

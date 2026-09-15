@@ -193,10 +193,15 @@
             parental: function () {
                 var s = XTV.store.settings();
                 var w = U.el('div');
-                w.appendChild(rowToggle('Require PIN', function () { return s.pinEnabled; }, function (v) {
+                w.appendChild(rowToggle('Require PIN on launch', function () { return s.pinEnabled; }, function (v) {
                     if (v && !s.pin) { XTV.ui.toast('Set a PIN first'); return; }
                     XTV.store.setSetting('pinEnabled', v);
                 }, 'Ask for PIN when opening the app'));
+                w.appendChild(rowToggle('PIN-lock adult content', function () { return s.pinAdult; }, function (v) {
+                    if (v && !s.pin) { XTV.ui.toast('Set a PIN first'); return; }
+                    XTV.store.setSetting('pinAdult', v);
+                    XTV.ui.toast(v ? 'Adult content requires PIN to play' : 'Adult PIN lock off');
+                }, 'Require PIN before playing adult-category channels/VOD'));
                 w.appendChild(rowAction(s.pin ? 'Change PIN' : 'Set PIN', function () {
                     XTV.ui.pinpad('Enter new PIN (4 digits)', function (val) {
                         XTV.store.setSetting('pin', val);
@@ -219,14 +224,25 @@
                 w.appendChild(rowToggle('Ambient background', function () { return s.ambient; }, function (v) {
                     XTV.store.setSetting('ambient', v);
                     XTV.app.ambient('');
-                }, 'Blurred artwork behind browsed content (Apple TV style)'));
+                }, 'Blurred artwork behind browsed content'));
                 w.appendChild(rowValue('Accent color', function () { return s.accent; }, function (set) {
-                    var opts = ['#0a84ff', '#ff375f', '#248a3d', '#bf5af2', '#c93400', '#5e5ce6'];
+                    var opts = ['#e8a946', '#0a84ff', '#ff375f', '#248a3d', '#bf5af2', '#c93400', '#5e5ce6'];
                     var v = opts[(opts.indexOf(s.accent) + 1) % opts.length];
                     XTV.store.setSetting('accent', v);
                     XTV.app.applyAccent(v);
                     set(v);
                 }));
+                w.appendChild(rowValue('Screensaver', function () {
+                    var v = s.screensaverMin || 0;
+                    return v ? v + ' min' : 'Off';
+                }, function (set) {
+                    var opts = [0, 5, 10, 15, 30];
+                    var i = Math.max(0, opts.indexOf(s.screensaverMin || 0));
+                    var v = opts[(i + 1) % opts.length];
+                    XTV.store.setSetting('screensaverMin', v);
+                    set(v ? v + ' min' : 'Off');
+                    if (XTV.app.resetScreensaver) XTV.app.resetScreensaver();
+                }, 'Show clock screensaver after idle'));
                 return w;
             },
 
@@ -326,6 +342,49 @@
                         { label: 'Cancel', onSelect: function (c) { c(); } },
                         { label: 'Clear', primary: true, onSelect: function (c) { c(); XTV.store.clearAllProgress(); XTV.ui.toast('Cleared'); } }
                     ]);
+                }));
+                w.appendChild(rowAction('Export backup (JSON)', function () {
+                    var data = JSON.stringify(XTV.store._state(), null, 2);
+                    var blob = new Blob([data], { type: 'application/json' });
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'solstice-tv-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+                    document.body.appendChild(a);
+                    try { a.click(); } catch (e) {}
+                    setTimeout(function () {
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    }, 200);
+                    XTV.ui.toast('Backup exported');
+                }));
+                w.appendChild(rowAction('Import backup (JSON)', function () {
+                    var input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.json,application/json';
+                    input.style.display = 'none';
+                    document.body.appendChild(input);
+                    input.addEventListener('change', function () {
+                        var f = input.files && input.files[0];
+                        if (!f) return;
+                        var reader = new FileReader();
+                        reader.onload = function () {
+                            try {
+                                var obj = JSON.parse(reader.result);
+                                if (!obj.settings || !obj.profiles) throw new Error('Invalid backup');
+                                var S = XTV.store._state();
+                                Object.assign(S, obj);
+                                XTV.store.save();
+                                XTV.ui.toast('Backup restored — reloading…');
+                                setTimeout(function () { XTV.app.reloadProfiles(); }, 800);
+                            } catch (e) {
+                                XTV.ui.toast('Import failed: ' + e.message);
+                            }
+                        };
+                        reader.readAsText(f);
+                        document.body.removeChild(input);
+                    });
+                    input.click();
                 }));
                 return w;
             },

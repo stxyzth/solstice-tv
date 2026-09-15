@@ -20,8 +20,11 @@
         fullEpg: true,            // load full xmltv guide when available
         hideAdult: true,
         pinEnabled: false,
+        pinAdult: false,
         pin: '',
-        displayClock: true
+        displayClock: true,
+        screensaverMin: 0,
+        recentSearches: []
     };
 
     var S = null;      // state

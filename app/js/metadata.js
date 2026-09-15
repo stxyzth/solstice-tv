@@ -201,6 +201,21 @@
         });
     }
 
+    function trending() {
+        if (!enabled()) return Promise.resolve([]);
+        return api('/trending/all/week', {}, 12 * 3600 * 1000).then(function (d) {
+            if (!d || !d.results) return [];
+            return d.results.map(function (r) {
+                return {
+                    title: r.title || r.name || '',
+                    year: (r.release_date || r.first_air_date || '').slice(0, 4),
+                    poster: r.poster_path ? IMG + 'w342' + r.poster_path : '',
+                    kind: r.media_type === 'tv' ? 'series' : 'movie'
+                };
+            });
+        });
+    }
+
     XTV.meta = {
         enabled: enabled,
         cleanTitle: cleanTitle,
@@ -208,6 +223,7 @@
         seriesDetail: seriesDetail,
         episodeStill: episodeStill,
         imdbRatings: imdbRatings,
+        trending: trending,
         IMG: IMG
     };
 })();

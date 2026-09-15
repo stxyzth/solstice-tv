@@ -312,7 +312,10 @@
                         cls: 'modal-narrow',
                         body: '<p class="modal-dim" style="margin-top:0">' + U.esc(ch.name) + ' · ' + U.fmtClock(p.start) + ' – ' + U.fmtClock(p.stop) + '</p>' +
                             '<p class="modal-text">' + U.esc(p.desc || 'No description available.') + '</p>',
-                        buttons: [{ label: 'Close', primary: true, onSelect: function (c) { c(); } }]
+                        buttons: [
+                            { label: 'Remind me', onSelect: function (c) { c(); XTV.app.setReminder(ch, { title: p.title, start: p.start, stop: p.stop }); } },
+                            { label: 'Close', primary: true, onSelect: function (c) { c(); } }
+                        ]
                     });
                 }
             }

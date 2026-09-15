@@ -363,6 +363,112 @@
         document.documentElement.style.setProperty('--accent', color || '#0a84ff');
     };
 
+    /* ---------------- screensaver ---------------- */
+    var ssTimer = null, ssEl = null;
+    function resetScreensaver() {
+        clearTimeout(ssTimer);
+        if (ssEl) { ssEl.classList.add('off'); setTimeout(function () { if (ssEl && ssEl.parentElement) ssEl.parentElement.removeChild(ssEl); ssEl = null; }, 400); }
+        var min = XTV.store.settings().screensaverMin || 0;
+        if (!min || XTV.player.isActive()) return;
+        ssTimer = setTimeout(showScreensaver, min * 60000);
+    }
+    function showScreensaver() {
+        if (XTV.player.isActive() || ssEl) return;
+        ssEl = U.el('div', 'screensaver');
+        ssEl.innerHTML = '<div class="ss-clock" id="ss-clock"></div><div class="ss-hint">Press any key</div>';
+        document.body.appendChild(ssEl);
+        requestAnimationFrame(function () { ssEl.classList.add('on'); });
+        updateSsClock();
+        ssEl._interval = setInterval(updateSsClock, 30000);
+    }
+    function updateSsClock() {
+        var el = U.byId('ss-clock');
+        if (!el) return;
+        var d = new Date();
+        el.textContent = U.pad2(d.getHours()) + ':' + U.pad2(d.getMinutes());
+        el.style.top = Math.round(10 + Math.random() * 60) + '%';
+        el.style.left = Math.round(5 + Math.random() * 70) + '%';
+    }
+    function dismissScreensaver() {
+        if (ssEl) { clearInterval(ssEl._interval); resetScreensaver(); return true; }
+        return false;
+    }
+    app.resetScreensaver = resetScreensaver;
+
+    /* ---------------- help overlay (color button legend) ---------------- */
+    function showHelp() {
+        var top = app.navStack.length ? app.navStack[app.navStack.length - 1] : null;
+        var screen = top ? top.id : 'home';
+        var lines = [
+            { color: '#ff453a', key: 'Red', desc: screen === 'live' ? 'Toggle favorites filter' : 'No action' },
+            { color: '#30d158', key: 'Green', desc: 'No action' },
+            { color: '#ffd60a', key: 'Yellow', desc: screen === 'live' ? 'Jump to now' : 'No action' },
+            { color: '#4a9eff', key: 'Blue', desc: screen === 'live' ? 'Multi-View' : 'No action' }
+        ];
+        var body = '<div class="help-legend">';
+        lines.forEach(function (l) {
+            body += '<div class="help-line"><span class="help-dot" style="background:' + l.color + '"></span><span class="help-key">' + U.esc(l.key) + '</span><span class="help-desc">' + U.esc(l.desc) + '</span></div>';
+        });
+        body += '</div>';
+        body += '<div class="modal-dim" style="margin-top:18px">0–9 on Live TV: channel zap · CH+/CH-: navigate channels</div>';
+        XTV.ui.modal({ title: 'Remote Shortcuts', cls: 'modal-narrow', body: body, buttons: [{ label: 'Close', primary: true, onSelect: function (c) { c(); } }] });
+    }
+
+    /* ---------------- EPG reminders ---------------- */
+    var reminders = [];
+    var reminderTimer = null;
+    app.setReminder = function (ch, program) {
+        var r = { chId: ch.id, chName: ch.name, chIcon: ch.icon, title: program.title, start: program.start, stop: program.stop };
+        reminders = reminders.filter(function (x) { return x.chId !== r.chId || x.start !== r.start; });
+        reminders.push(r);
+        scheduleReminderCheck();
+        XTV.ui.toast('Reminder set: ' + r.title + ' at ' + U.fmtClock(r.start));
+    };
+    app.cancelReminder = function (chId, start) {
+        reminders = reminders.filter(function (x) { return !(x.chId === chId && x.start === start); });
+        XTV.ui.toast('Reminder cancelled');
+    };
+    app.getReminders = function () { return reminders; };
+    function scheduleReminderCheck() {
+        clearInterval(reminderTimer);
+        reminderTimer = setInterval(function () {
+            var now = Date.now();
+            reminders = reminders.filter(function (r) {
+                var diff = r.start - now;
+                if (diff <= 0 && diff > -60000) {
+                    XTV.ui.modal({
+                        title: 'Reminder: ' + r.title,
+                        cls: 'modal-narrow',
+                        body: '<p class="modal-text">' + U.esc(r.chName) + ' — ' + U.esc(r.title) + ' is starting now!</p>',
+                        buttons: [
+                            { label: 'Dismiss', onSelect: function (c) { c(); } },
+                            { label: 'Watch', primary: true, onSelect: function (c) {
+                                c();
+                                var ch = (app.catalog && app.catalog.live || []).find(function (x) { return x.id === r.chId; });
+                                if (ch) app.playLive(ch);
+                                else XTV.ui.toast('Channel not found');
+                            }}
+                        ]
+                    });
+                    return false;
+                }
+                return r.start > now - 60000;
+            });
+            if (!reminders.length) clearInterval(reminderTimer);
+        }, 15000);
+    }
+
+    /* ---------------- parental PIN gate for adult content ---------------- */
+    app.checkAdultPin = function (item, cb) {
+        var s = XTV.store.settings();
+        if (!s.pinAdult || !s.pin) return cb();
+        if (item && item.catId) {
+            var isAdult = XTV.xtream.isAdult(item.catName || '');
+            if (!isAdult) return cb();
+        }
+        XTV.ui.checkPin('Enter PIN for adult content', cb);
+    };
+
     /* ---------------- external settings (mobile companion) ---------------- */
     var REMOTE_KEYS = ['accent', 'ambient', 'preferNative', 'bufferSec', 'autoplayNext', 'markWatchedPct',
         'epgOffsetHours', 'fullEpg', 'hideAdult', 'subtitleLang', 'tmdbKey', 'omdbKey', 'osKey', 'displayClock', 'skipIntroSec'];
@@ -402,8 +508,8 @@
     }
 
     function onKeyDown(e) {
-        // native text entry: while a field is focused, the TV system keyboard
-        // (or hardware keyboard) owns the keys — backspace edits, Back/Escape leaves
+        resetScreensaver();
+        if (dismissScreensaver()) { e.preventDefault(); return; }
         var ae = document.activeElement;
         if (app.booted && ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) {
             if (e.keyCode === 461 || e.keyCode === 27) {
@@ -415,6 +521,7 @@
         var key = KEYMAP[e.keyCode];
         if (!key) return;
         if (!app.booted) return;
+        if (key === 'green' && !XTV.player.isActive()) { showHelp(); e.preventDefault(); return; }
         var handled = true;
         var modal = topModal();
         if (modal) {
@@ -478,6 +585,7 @@
     }
 
     function afterGate() {
+        resetScreensaver();
         var prof = XTV.store.activeProfile();
         if (prof) {
             showSplash('Connecting to ' + prof.name + '…');

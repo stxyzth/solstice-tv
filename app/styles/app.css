@@ -1275,3 +1275,84 @@ body.player-active #app { visibility: hidden; }
 .field-input::placeholder, .prompt-input::placeholder, .search-input::placeholder,
 .field-input::-webkit-input-placeholder, .prompt-input::-webkit-input-placeholder,
 .search-input::-webkit-input-placeholder { color: var(--text-dim); font-weight: 400; }
+
+/* ---------------- screensaver ---------------- */
+.screensaver {
+    position: fixed; inset: 0;
+    z-index: 800;
+    background: #000;
+    opacity: 0;
+    -webkit-transition: opacity 1s ease;
+    transition: opacity 1s ease;
+    pointer-events: none;
+}
+.screensaver.on { opacity: 1; pointer-events: auto; }
+.ss-clock {
+    position: absolute;
+    font-size: 120px;
+    font-weight: 200;
+    color: rgba(226, 221, 213, 0.6);
+    font-variant-numeric: tabular-nums;
+    -webkit-transition: top 2s ease, left 2s ease;
+    transition: top 2s ease, left 2s ease;
+    text-shadow: 0 0 60px rgba(232, 169, 70, 0.15);
+}
+.ss-hint {
+    position: absolute;
+    bottom: 60px; left: 50%;
+    -webkit-transform: translateX(-50%);
+    transform: translateX(-50%);
+    font-size: 20px;
+    color: rgba(226, 221, 213, 0.2);
+}
+
+/* ---------------- channel OSD ---------------- */
+.player-osd {
+    display: -webkit-flex; display: flex;
+    -webkit-align-items: center; align-items: center;
+    gap: 22px;
+    background: rgba(14, 13, 18, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 16px;
+    padding: 20px 36px;
+    -webkit-animation: osd-in .3s ease;
+    animation: osd-in .3s ease;
+}
+@-webkit-keyframes osd-in { from { opacity: 0; -webkit-transform: translateY(12px); } }
+@keyframes osd-in { from { opacity: 0; transform: translateY(12px); } }
+.player-osd-num {
+    font-size: 56px;
+    font-weight: 800;
+    color: var(--accent);
+    min-width: 90px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+.player-osd-name {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+/* ---------------- help overlay legend ---------------- */
+.help-legend { padding: 8px 0; }
+.help-line {
+    display: -webkit-flex; display: flex;
+    -webkit-align-items: center; align-items: center;
+    gap: 16px;
+    padding: 10px 0;
+}
+.help-dot {
+    width: 18px; height: 18px;
+    border-radius: 100px;
+    -webkit-flex: none; flex: none;
+}
+.help-key {
+    font-weight: 700;
+    font-size: 22px;
+    min-width: 90px;
+}
+.help-desc {
+    font-size: 22px;
+    color: var(--text-dim);
+}

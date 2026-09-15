@@ -10,6 +10,7 @@
     var state = null;          // active play opts
     var controlsOn = false, zone = 'scrub', btnIdx = 0;
     var hideTimer = null, saveTimer = null, watchdog = null, infoTimer = null;
+    var sleepTimer = null, sleepEnd = 0;
     var zapDigits = '', zapTimer = null;
     var retryExtDone = false, hlsFallbackDone = false;
     var lastInIntro = false;
@@ -376,6 +377,65 @@
         };
     }
 
+    /* ---------------- sleep timer ---------------- */
+    function sleepMenu() {
+        clearTimeout(hideTimer);
+        var opts = [
+            { label: 'Off', min: 0 },
+            { label: '15 minutes', min: 15 },
+            { label: '30 minutes', min: 30 },
+            { label: '60 minutes', min: 60 },
+            { label: '90 minutes', min: 90 },
+            { label: '120 minutes', min: 120 }
+        ];
+        var active = sleepTimer ? Math.ceil((sleepEnd - Date.now()) / 60000) : 0;
+        var html = opts.map(function (o, i) {
+            var sel = (!sleepTimer && o.min === 0) || (sleepTimer && o.min === Math.round(active));
+            return '<div class="menu-item' + (sel ? ' sel' : '') + '" data-x data-mi="' + i + '">' + U.esc(o.label) + (sel ? ' ✓' : '') + '</div>';
+        }).join('');
+        if (sleepTimer) {
+            html = '<div class="menu-sep">' + Math.ceil((sleepEnd - Date.now()) / 60000) + ' min remaining</div>' + html;
+        }
+        var m = XTV.ui.modal({
+            title: 'Sleep Timer',
+            cls: 'modal-menu',
+            body: html,
+            buttons: [{ label: 'Close', primary: true, onSelect: function (close) { close(); } }]
+        });
+        m.box.querySelector('.modal-body').addEventListener('xfselect', function (e) {
+            var i = parseInt(e.detail.el.getAttribute('data-mi'), 10);
+            if (isNaN(i)) return;
+            var min = opts[i].min;
+            clearTimeout(sleepTimer);
+            sleepTimer = null;
+            if (min > 0) {
+                sleepEnd = Date.now() + min * 60000;
+                sleepTimer = setTimeout(function () {
+                    sleepTimer = null;
+                    XTV.ui.toast('Sleep timer — goodnight');
+                    setTimeout(function () { exit(); }, 1500);
+                }, min * 60000);
+                XTV.ui.toast('Sleep timer: ' + min + ' minutes');
+            } else {
+                XTV.ui.toast('Sleep timer off');
+            }
+            m.close();
+            buildButtons();
+            renderControlsFocus();
+            scheduleHide(4000);
+        });
+    }
+
+    /* ---------------- channel number OSD ---------------- */
+    function showChannelOsd(ch, idx) {
+        var el = overlay.querySelector('.player-center');
+        el.innerHTML = '<div class="player-osd"><span class="player-osd-num">' + (ch.num != null ? ch.num : idx + 1) + '</span><span class="player-osd-name">' + U.esc(ch.name) + '</span></div>';
+        setTimeout(function () {
+            var osd = overlay.querySelector('.player-osd');
+            if (osd) osd.parentElement.innerHTML = '';
+        }, 2500);
+    }
+
     /* ---------------- controls UI ---------------- */
     function buildButtons() {
         var row = overlay.querySelector('.player-buttons');
@@ -404,6 +464,7 @@
         }
         BUTTONS.push({ icon: '🕘', label: 'History', cb: historyMenu });
         BUTTONS.push({ icon: '⚙', label: 'Quality / Audio', cb: trackMenu });
+        BUTTONS.push({ icon: '💤', label: sleepTimer ? Math.ceil((sleepEnd - Date.now()) / 60000) + 'm' : 'Sleep', cb: sleepMenu });
         var html = '';
         for (var i = 0; i < BUTTONS.length; i++)
             html += '<div class="pbtn' + (BUTTONS[i].cls || '') + '" data-bi="' + i + '"><span class="pbtn-icon">' + BUTTONS[i].icon + '</span><span class="pbtn-label">' + BUTTONS[i].label + '</span></div>';
@@ -551,6 +612,7 @@
     function tuneTo(list, idx) {
         var ch = list[idx];
         if (!ch) return;
+        showChannelOsd(ch, idx);
         var ext = 'm3u8';
         play({
             kind: 'live',
@@ -944,6 +1006,7 @@
     function stopTimers() {
         clearInterval(infoTimer); clearInterval(watchdog);
         clearTimeout(hideTimer); clearTimeout(zapTimer);
+        clearTimeout(sleepTimer); sleepTimer = null;
         if (nextCountdown) { nextCountdown.cancel(); nextCountdown = null; }
         stopProgressSaver();
     }

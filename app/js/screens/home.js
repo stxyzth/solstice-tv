@@ -222,6 +222,31 @@
                 });
         }
 
+        // TMDB Trending (matched against provider catalog)
+        if (XTV.meta.enabled()) {
+            var trendRow = XTV.ui.buildRow({ title: 'Trending Now', items: [], onSelect: function (it) { openOrMatch(it.title, it._kind || 'movie'); } });
+            rowsWrap.appendChild(trendRow);
+            var tsc = trendRow._scroller;
+            XTV.meta.trending().then(function (list) {
+                if (!list || !list.length) { trendRow.style.display = 'none'; return; }
+                var vodNames = {};
+                (cat.vod || []).forEach(function (v) { vodNames[XTV.meta.cleanTitle(v.name).title.toLowerCase()] = 'movie'; });
+                (cat.series || []).forEach(function (s) { vodNames[XTV.meta.cleanTitle(s.name).title.toLowerCase()] = 'series'; });
+                var shown = 0;
+                list.forEach(function (t) {
+                    if (shown >= 18) return;
+                    var k = XTV.meta.cleanTitle(t.title).title.toLowerCase();
+                    var kind = vodNames[k];
+                    if (!kind) return;
+                    var card = XTV.ui.cardEl({ title: t.title, sub: t.year, icon: t.poster }, 'poster');
+                    card._item = { title: t.title, _kind: kind };
+                    tsc.appendChild(card);
+                    shown++;
+                });
+                if (!shown) trendRow.style.display = 'none';
+            });
+        }
+
         // provider status chips
         var status = U.el('div', 'home-status');
         var info = XTV.app.demo ? null : (XTV.xtream.info() || {});
